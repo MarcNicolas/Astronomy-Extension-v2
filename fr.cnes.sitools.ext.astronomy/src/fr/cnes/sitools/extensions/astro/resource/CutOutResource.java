@@ -234,9 +234,11 @@ public class CutOutResource extends SitoolsParameterizedResource {
                 final String filename = storageDirectory.getLocalPath() + File.separator + fileIdentifier;
                 fits = new Fits(filename);
             } else {
+                
                 final SitoolsSettings sitoolsSettings = (SitoolsSettings) getContext().getAttributes().get(ContextAttributes.SETTINGS);
                 final String rootURL = sitoolsSettings.getPublicHostDomain();
                 final URL url = (fileIdentifier.startsWith("http://")) ? new URL(fileIdentifier) : new URL(rootURL + fileIdentifier);
+                LOG.severe("***********************    DANS CutOutResource  URL : "+url.toString());
                 fits = new Fits(url);
             }            
             cutOut = new CutOutSITools2(fits, rightAscension, declination, radius, hduNumber, cubeIndex);

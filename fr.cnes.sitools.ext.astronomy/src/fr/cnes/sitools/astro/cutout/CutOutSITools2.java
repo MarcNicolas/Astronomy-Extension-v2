@@ -134,6 +134,7 @@ public class CutOutSITools2 implements CutOutInterface {
      */
     private SupportedFileFormat formatOutput;
 
+    private static final Logger LOG = Logger.getLogger(CutOutSITools2.class.getName());
     /**
      * Empty constructor.
      */
@@ -153,6 +154,7 @@ public class CutOutSITools2 implements CutOutInterface {
      */
     public CutOutSITools2(final Fits fitsObj, final double rightAscension, final double declination, final double widthDeg, final double heightDeg, final int hduImageNumber, final int deepLevel) throws CutOutException  {
         try {
+            LOG.severe("RA = "+rightAscension+"  DEC = "+declination+"  widthDeg = "+widthDeg+"  heightDeg = "+heightDeg+"  hduImageNumber : "+hduImageNumber+"   deepLevel : "+deepLevel);
             setFits(new FITSImage(fitsObj, hduImageNumber, deepLevel, FITSImage.SCALE_LINEAR));
             setRightAscension(rightAscension);
             setDeclination(declination);
@@ -244,12 +246,19 @@ public class CutOutSITools2 implements CutOutInterface {
      */
     protected final void init() throws FitsException {
         final int nbAxes = getFits().getImageHDU().getAxes().length;
+        LOG.severe("------------  SIZE getNumberOfHDUs : "+getFits().getFits().getNumberOfHDUs());
+        LOG.severe("------------  SIZE size() : "+getFits().getFits().size());
+        LOG.info("-----------------------------------   : "+getFits().getImageHDU().getSize());
         this.corners = new int[nbAxes];
         this.lengths = new int[nbAxes];
         final WCSTransform wcs = getWcs(this.getFits().getImageHDU());
+        LOG.severe("------------  wcs.getWCSCenter() : "+wcs.getWCSCenter());
         this.scaleDegPerPixelWidth = computeScaleDegPerPixelWidth(wcs);
         this.scaleDegPerPixelHeight = computeScaleDegPerPixelHeight(wcs);
         this.xyCoord = wcs.wcs2pix(this.getRightAscension(), this.getDeclination());
+        LOG.severe("------------  wcs.getImageCenter().getX() : "+wcs.getImageCenter().getX());
+        LOG.severe("------------  wcs.getImageCenter().getY() : "+wcs.getImageCenter().getY());
+        LOG.severe("------------  isDataCube() : "+isDataCube());
         if (isDataCube()) {
             setWidth(getWidth() + 1);
             setHeight(getHeight() + 1);
@@ -274,8 +283,13 @@ public class CutOutSITools2 implements CutOutInterface {
          *      |___|      |___|
          *        |__________|
          */
+        LOG.info("------------------- isLeftCornerCutOutImageAlongX() : "+isLeftCornerCutOutImageAlongX());
+        LOG.severe("******   this.lengths[getWidth()] : "+this.lengths[getWidth()]+"  Math.abs(this.corners[getWidth()]) : "+Math.abs(this.corners[getWidth()]));
+        LOG.info("------------------- isRightCornerCutOutImageAlongX((int) wcs.getWidth()) : "+isRightCornerCutOutImageAlongX((int) wcs.getWidth()));
+        LOG.severe("******   this.corners[getWidth()]: "+this.corners[getWidth()]+"  wcs.getWidth() : "+wcs.getWidth());
         if (isLeftCornerCutOutImageAlongX()) {
             // Checks if the cutOut is completely outside the image
+            
             if (this.lengths[getWidth()] <= Math.abs(this.corners[getWidth()])) {
                 throw new IllegalArgumentException("Cut out of the image");
             } else {
@@ -287,6 +301,7 @@ public class CutOutSITools2 implements CutOutInterface {
                 this.corners[getWidth()] = 0;
             }
         } else if (isRightCornerCutOutImageAlongX((int) wcs.getWidth())) {
+           
            if (this.corners[getWidth()] >= wcs.getWidth()) {
                 throw new IllegalArgumentException("Cut out of the image");
            } else {
