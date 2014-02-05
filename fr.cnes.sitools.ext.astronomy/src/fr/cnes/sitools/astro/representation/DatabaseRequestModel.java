@@ -265,12 +265,26 @@ public class DatabaseRequestModel implements TemplateSequenceModel {
         protected final void setMap(final Map mapVal) {
             this.map = mapVal;
         }
+        /**
+         * 
+         * @param mapVal 
+         */
+        public final void setMap2(final Map mapVal) {
+            this.map = mapVal;
+        }
 
         /**
          * Returns the mapping.
          * @return the mapping
          */
         protected final Map getMap() {
+            return this.map;
+        }
+        /**
+         * Returns the mapping.
+         * @return the mapping
+         */
+        public final Map getMap2() {
             return this.map;
         }
 
@@ -303,9 +317,11 @@ public class DatabaseRequestModel implements TemplateSequenceModel {
          */
         @Override
         public final TemplateModel get(final String columnAlias) throws TemplateModelException {
+            
             return new SimpleScalar(String.valueOf(getMap().get(columnAlias)));
         }
 
+        
         /**
          * Checks if it is empty.
          * @return true if there is no next row otherwise false

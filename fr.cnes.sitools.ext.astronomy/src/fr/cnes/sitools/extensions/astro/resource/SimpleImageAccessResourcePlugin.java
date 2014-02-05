@@ -176,6 +176,10 @@ public class SimpleImageAccessResourcePlugin extends ResourceModel {
                 "The largest number of records that the service will return", ResourceParameterType.PARAMETER_INTERN);
         maxRecords.setValue("-1");
         addParam(maxRecords);
+        
+        final ResourceParameter urlCutOutService = new ResourceParameter("urlCutOutService", "Url of the cutOut service, must be not null if the service is Image Cutout Service"
+                , ResourceParameterType.PARAMETER_INTERN);
+         addParam(urlCutOutService);
     }
 
     /**
@@ -215,6 +219,11 @@ public class SimpleImageAccessResourcePlugin extends ResourceModel {
                     constraint.setValueName(SimpleImageAccessProtocolLibrary.GEO_ATTRIBUT);
                     constraintList.add(constraint);
                 }
+                
+                final ResourceParameter urlCutOutService = params.get("urlCutOutService");
+                final ResourceParameter serviceType = params.get(fr.cnes.sitools.astro.vo.sia.SimpleImageAccessProtocolLibrary.SERVICE_NAME);
+                //if(serviceType.getValue().equ)
+                
                 return constraintList;
             }
         };

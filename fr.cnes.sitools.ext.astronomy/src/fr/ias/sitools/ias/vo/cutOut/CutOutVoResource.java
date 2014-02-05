@@ -125,8 +125,9 @@ public class CutOutVoResource {
         this.switchCutOut = switchCutOut;
     }
     
-    public List<String> execute(){
+    public HashMap execute(){
         List<String> urlCutFitsFiles = new ArrayList();
+        HashMap<Integer,String> urlCutFitsFiles2 = new HashMap();
         LOG.severe("-------------------------------------------- Je suis dans execute!!");
         Representation rep = null;
         final String posInput = this.request.getResourceRef().getQueryAsForm().getFirstValue(SimpleImageAccessProtocolLibrary.POS);
@@ -202,6 +203,7 @@ public class CutOutVoResource {
                     /*String urlTmp2 =  URLEncoder.encode(urlCutFitsFileTmp, "UTF-8");
                     LOG.severe("****************************   ENOCDE(urlCutFitsFileTmp) : "+urlTmp2);*/
                     urlCutFitsFiles.add(urlCutFitsFileTmp);
+                    urlCutFitsFiles2.put(primaryKeyValue, urlCutFitsFileTmp);
                     //urlCutFitsFiles.add(urlTmp2);
                     
                     if(this.switchCutOut){
@@ -287,7 +289,7 @@ public class CutOutVoResource {
         } catch (IOException ex) {
             Logger.getLogger(ClassTestCutOut.class.getName()).log(Level.SEVERE, null, ex);
         }*/
-        return urlCutFitsFiles;
+        return urlCutFitsFiles2;
     }
     
 }

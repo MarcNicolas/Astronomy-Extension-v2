@@ -18,14 +18,19 @@
  ******************************************************************************/
 package fr.cnes.sitools.astro.vo.sia;
 
+import fr.cnes.sitools.astro.representation.DatabaseRequestModel;
 import fr.cnes.sitools.astro.representation.VOTableRepresentation;
 import fr.cnes.sitools.dataset.DataSetApplication;
 import fr.cnes.sitools.plugins.resources.model.ResourceModel;
+import freemarker.template.TemplateModel;
+import freemarker.template.TemplateModelException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.ivoa.xml.votable.v1.DataType;
 import org.restlet.Context;
@@ -675,6 +680,41 @@ public class SimpleImageAccessProtocolLibrary {
     } else {
       final SimpleImageAccessDataModelInterface response = new SimpleImageAccessResponse((SimpleImageAccessInputParameters) inputParameters, resourceModel);
       dataModel = response.getDataModel();
+    }
+    
+    
+    LOG.severe("*********************  SIZE DATAMODEL : "+dataModel.size());
+    LOG.severe("---------------------  values  :" +dataModel.values());
+    for( Iterator ii = dataModel.keySet().iterator(); ii.hasNext();) {
+        String key = (String)ii.next();
+       // LOG.severe("*************************************** DATAMODEL key : "+ key);
+        Object obj = (Object) dataModel.get(key);
+        
+        if(!key.equalsIgnoreCase("rows")){
+            ArrayList values = (ArrayList) dataModel.get(key);
+      //      LOG.severe("*************************************** DATAMODEL key : "+ key);
+            if(key.equals("fields")){
+                for(Object value : values){
+                    net.ivoa.xml.votable.v1.Field field = (net.ivoa.xml.votable.v1.Field) value;
+        //            LOG.info("--------------------------------- field.getName() : "+field.getName()+"field.getDatatype() : "+field.getDatatype());
+                }
+            }else{
+                for(Object value : values){
+          //          LOG.info("***************************************** Pour la key : "+key+" = "+value.toString());
+                }
+            }
+        }else{
+             try {
+                    DatabaseRequestModel dbModel = (DatabaseRequestModel) dataModel.get(key);
+                    for(int j=0;j<dbModel.size();j++){
+                        DatabaseRequestModel.Row r = (DatabaseRequestModel.Row) dbModel.get(j);
+                        LOG.severe("*************************************** DOWNLOAD : "+r.get("download"));
+                    }                   
+                } catch (TemplateModelException ex) {
+                    Logger.getLogger(SimpleImageAccessProtocolLibrary.class.getName()).log(Level.SEVERE, null, ex);
+                }
+        }
+
     }
     return dataModel;
   }

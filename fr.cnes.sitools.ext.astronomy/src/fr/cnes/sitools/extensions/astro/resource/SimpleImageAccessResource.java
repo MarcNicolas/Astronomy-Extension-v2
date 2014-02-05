@@ -23,6 +23,7 @@ import fr.cnes.sitools.common.resource.SitoolsParameterizedResource;
 import fr.cnes.sitools.dataset.DataSetApplication;
 import fr.ias.sitools.ias.vo.cutOut.CutOutVoResource;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 import org.restlet.data.Disposition;
@@ -85,10 +86,21 @@ public class SimpleImageAccessResource extends SitoolsParameterizedResource {
     if(serviceName.equalsIgnoreCase("Image Cutout Service")){
         LOG.warning("**********    ON EST BIEN DANS LE CUT OUT");
         CutOutVoResource cut = new CutOutVoResource(this.getRequest(), this.getContext(),(DataSetApplication) this.getApplication(), this.getModel());
-        List<String> urlCutFitsFiles = cut.execute();
-        for(String file : urlCutFitsFiles){
-            LOG.severe("********************--------------------------------- file : "+file);
+        HashMap<Integer,String> urlCutFitsFiles = cut.execute();
+        for (Integer key : urlCutFitsFiles.keySet()) {
+            String value = urlCutFitsFiles.get(key);
+            LOG.severe("*********************************    Key : " + key + " = " + value);
         }
+        final SimpleImageAccessProtocolLibrary sia = new SimpleImageAccessProtocolLibrary((DataSetApplication) this.getApplication(),
+            this.getModel(), this.getRequest(), this.getContext());
+        //final Representation rep = sia.getResponse();
+        rep = sia.getResponse();
+        if (fileName != null && !"".equals(fileName)) {
+            final Disposition disp = new Disposition(Disposition.TYPE_ATTACHMENT);
+            disp.setFilename(fileName);
+            rep.setDisposition(disp);
+        }
+        return rep;
     }else if(serviceName.equalsIgnoreCase("Pointed Image Archive")){
         LOG.warning("**********    ON EST BIEN DANS LE SIA Pointed Archive Image");
         final SimpleImageAccessProtocolLibrary sia = new SimpleImageAccessProtocolLibrary((DataSetApplication) this.getApplication(),
