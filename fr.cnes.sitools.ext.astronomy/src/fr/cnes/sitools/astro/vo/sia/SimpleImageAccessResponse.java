@@ -32,12 +32,14 @@ import fr.cnes.sitools.dataset.model.Predicat;
 import fr.cnes.sitools.dictionary.model.Concept;
 import fr.cnes.sitools.plugins.resources.model.ResourceModel;
 import fr.cnes.sitools.util.Util;
+import freemarker.template.TemplateModelException;
 import freemarker.template.TemplateSequenceModel;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -171,15 +173,40 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
       setFields(fieldList, columnList, mappingList);
       dataModel.put("fields", fieldList);
       dataModel.put("sqlColAlias", columnList);
+      for(String col : columnList){
+          LOG.severe("*************************************** col : "+col);
+      }
 
       // Complete data model with data
       final int count = (databaseRequest.getCount() > dbParams.getPaginationExtend()) ? dbParams.getPaginationExtend() : databaseRequest.getCount();     
       final ConverterChained converterChained = datasetApp.getConverterChained();
       final TemplateSequenceModel rows = new DatabaseRequestModel(databaseRequest, converterChained);
-    
       ((DatabaseRequestModel) rows).setSize(count);
+      
       dataModel.put("rows", rows);
 
+      for( Iterator ii = dataModel.keySet().iterator(); ii.hasNext();) {
+        String key = (String)ii.next();
+        
+        if(!key.equalsIgnoreCase("rows")){
+            ArrayList values = (ArrayList) dataModel.get(key);
+            for(Object value : values){
+                LOG.info("***************************************** Pour la key : "+key+" = "+value.toString());
+            }
+        }else{
+             try {
+                    DatabaseRequestModel dbModel = (DatabaseRequestModel) dataModel.get(key);
+                    for(int j=0;j<dbModel.size();j++){
+                        DatabaseRequestModel.Row r = (DatabaseRequestModel.Row) dbModel.get(j);
+                        LOG.severe("*************************************** DOWNLOAD : "+r.get("download"));
+                    }                   
+                } catch (TemplateModelException ex) {
+                    Logger.getLogger(SimpleImageAccessProtocolLibrary.class.getName()).log(Level.SEVERE, null, ex);
+                }
+        }
+
+      }
+      
     } catch (SitoolsException ex) {
       try {
         if (Util.isSet(databaseRequest)) {

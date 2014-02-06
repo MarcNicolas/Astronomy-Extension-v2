@@ -85,15 +85,12 @@ public class SimpleImageAccessResource extends SitoolsParameterizedResource {
     String serviceName = this.getModel().getParameterByName("Image service").getValue();
     if(serviceName.equalsIgnoreCase("Image Cutout Service")){
         LOG.warning("**********    ON EST BIEN DANS LE CUT OUT");
+        // APPEL DE LA CLASSE CUTOUTVORESOURCE POUR CRRER LES URL DES FITS COUPES A INJECTER DANS LA VOTABLE
         CutOutVoResource cut = new CutOutVoResource(this.getRequest(), this.getContext(),(DataSetApplication) this.getApplication(), this.getModel());
         HashMap<Integer,String> urlCutFitsFiles = cut.execute();
-        for (Integer key : urlCutFitsFiles.keySet()) {
-            String value = urlCutFitsFiles.get(key);
-            LOG.severe("*********************************    Key : " + key + " = " + value);
-        }
+        // APPEL DU SIAP POUR CREER LA REPONSE VOTABLE
         final SimpleImageAccessProtocolLibrary sia = new SimpleImageAccessProtocolLibrary((DataSetApplication) this.getApplication(),
             this.getModel(), this.getRequest(), this.getContext());
-        //final Representation rep = sia.getResponse();
         rep = sia.getResponse();
         if (fileName != null && !"".equals(fileName)) {
             final Disposition disp = new Disposition(Disposition.TYPE_ATTACHMENT);
@@ -114,18 +111,9 @@ public class SimpleImageAccessResource extends SitoolsParameterizedResource {
         }
         return rep;
     }else{
+        // VOIR LE CODE A METTRE EN CAS DE SERVICE QUI N'EST NI NU POINTED NI UN CUTOUT
         LOG.warning("**********    ON EST DANS LE ELSE DU SERVICE NAME");
     }
-
-    //Fin TEST MARC
-    /*final SimpleImageAccessProtocolLibrary sia = new SimpleImageAccessProtocolLibrary((DataSetApplication) this.getApplication(),
-            this.getModel(), this.getRequest(), this.getContext());
-    final Representation rep = sia.getResponse();
-    if (fileName != null && !"".equals(fileName)) {
-      final Disposition disp = new Disposition(Disposition.TYPE_ATTACHMENT);
-      disp.setFilename(fileName);
-      rep.setDisposition(disp);
-    }*/
     return rep;
   }
 
