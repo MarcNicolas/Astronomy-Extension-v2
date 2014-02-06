@@ -703,16 +703,17 @@ public class SimpleImageAccessProtocolLibrary {
           //          LOG.info("***************************************** Pour la key : "+key+" = "+value.toString());
                 }
             }
-        }else{
+        }else{/*
              try {
                     DatabaseRequestModel dbModel = (DatabaseRequestModel) dataModel.get(key);
                     for(int j=0;j<dbModel.size();j++){
                         DatabaseRequestModel.Row r = (DatabaseRequestModel.Row) dbModel.get(j);
+                        
                         LOG.severe("*************************************** DOWNLOAD : "+r.get("download"));
                     }                   
                 } catch (TemplateModelException ex) {
                     Logger.getLogger(SimpleImageAccessProtocolLibrary.class.getName()).log(Level.SEVERE, null, ex);
-                }
+                }*/
         }
 
     }

@@ -176,6 +176,7 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
       final int count = (databaseRequest.getCount() > dbParams.getPaginationExtend()) ? dbParams.getPaginationExtend() : databaseRequest.getCount();     
       final ConverterChained converterChained = datasetApp.getConverterChained();
       final TemplateSequenceModel rows = new DatabaseRequestModel(databaseRequest, converterChained);
+    
       ((DatabaseRequestModel) rows).setSize(count);
       dataModel.put("rows", rows);
 

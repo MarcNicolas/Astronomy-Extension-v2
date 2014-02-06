@@ -133,10 +133,7 @@ public class CutOutVoResource {
         final String posInput = this.request.getResourceRef().getQueryAsForm().getFirstValue(SimpleImageAccessProtocolLibrary.POS);
         final String sizeInput = this.request.getResourceRef().getQueryAsForm().getFirstValue(SimpleImageAccessProtocolLibrary.SIZE);
         final String format = this.request.getResourceRef().getQueryAsForm().getFirstValue(SimpleImageAccessProtocolLibrary.FORMAT);
-        /*final String intersect = this.request.getResourceRef().getQueryAsForm().getFirstValue(SimpleImageAccessProtocolLibrary.INTERSECT);
-        final String verbosity = this.request.getResourceRef().getQueryAsForm().getFirstValue(SimpleImageAccessProtocolLibrary.VERB);
-        *///----------------------- MODIFICATION MARC POUR LE CUT OUT----------------------------------
-    
+           
         final DataSetExplorerUtil dsExplorerUtil = new DataSetExplorerUtil(this.datasetApp, this.request,this.context);
         final SimpleImageAccessInputParameters inputParameters = new SimpleImageAccessInputParameters(datasetApp, request, this.context, this.resourceModel);
         
@@ -168,10 +165,7 @@ public class CutOutVoResource {
             String fileName = null;
             String fileNameCut = null;
             
-            
-            //int nbDatas = databaseRequest.getCount();
             String primaryKeyName = databaseRequest.getPrimaryKeys().get(0);
-            int k=0;
             
             String urlCutFitsFileTmp = null;
             while (databaseRequest.nextResult()){
