@@ -37,6 +37,8 @@ import fr.cnes.sitools.datasource.jdbc.model.Record;
 
 import fr.cnes.sitools.plugins.resources.model.ResourceModel;
 import fr.cnes.sitools.util.Util;
+import fr.cnes.sitools.common.resource.SitoolsParameterizedResource;
+import fr.ias.sitools.server.Constante.Const;
 
 import java.util.Arrays;
 
@@ -55,7 +57,7 @@ import org.restlet.Request;
  *
  * @author marc
  */
-public class CutOutVoResource {
+public class CutOutVoResource extends SitoolsParameterizedResource {
     
     /**
    * Logger.
@@ -81,38 +83,57 @@ public class CutOutVoResource {
     * Configuration parameters of this resource.
     */
     private final transient ResourceModel resourceModel;
-
     
+    private final transient String urlHostDomain = getSitoolsSetting(Const.APP_HOST_DOMAIN);
     /**
      * Url du du CutOut Services pour un ds
      */
-    private final transient String urlServicesCutOut = "http://idoc-herschel-test.ias.u-psud.fr/ds/pub/pacsphotol2/plugin/cutOut?1=1&p[0]=LISTBOXMULTIPLE|";
-
-
+    //private final transient String urlServicesCutOutTmp = "?1=1&amp;p[0]=LISTBOXMULTIPLE|";
+    private final transient String apiStringListBox = "?1=1&amp;p[0]=LISTBOXMULTIPLE|";
+        
+    /**
+     * The Url od the DataSet
+     */
+    private final String urlDs;
+    
+    /**
+     * The Complete Url of the cut fits
+     */
+    private final String urlServicesCutOut;
+    /**
+     * The Url Of the PlugIn Cut Out
+     */
+    private final String urlPlugInCutOut;
+    /**
+     * @param request
+     * @param context
+     * @param datasetApp
+     * @param resourceModel 
+     */
     // CONSTRUCTEURS
     public CutOutVoResource(Request request, Context context, DataSetApplication datasetApp, ResourceModel resourceModel) {
         this.request = request;
         this.context = context;
         this.datasetApp = datasetApp;
         this.resourceModel = resourceModel;
-
+        this.urlDs = this.datasetApp.getDataSet().getSitoolsAttachementForUsers();
+        this.urlPlugInCutOut = this.resourceModel.getParameterByName("urlCutOutService").getValue();
+        this.urlServicesCutOut = this.urlHostDomain+this.urlDs+this.urlPlugInCutOut+this.apiStringListBox;
     }
-   
-    
-    public HashMap execute(){
 
-        HashMap<Integer,String> urlCutFitsFiles = new HashMap();
-       
+    public HashMap execute(){
+        // Init de la HashMap qui contiendra les primarykey et les urls des fits coupés correspondant
+        HashMap<String,String> urlCutFitsFiles = new HashMap<String,String>();
+        // On récupère les paramètres de la requetes SIA
         final String posInput = this.request.getResourceRef().getQueryAsForm().getFirstValue(SimpleImageAccessProtocolLibrary.POS);
         final String sizeInput = this.request.getResourceRef().getQueryAsForm().getFirstValue(SimpleImageAccessProtocolLibrary.SIZE);
-        final String format = this.request.getResourceRef().getQueryAsForm().getFirstValue(SimpleImageAccessProtocolLibrary.FORMAT);
-           
+        
+        // On prépare la requete sur la base
         final DataSetExplorerUtil dsExplorerUtil = new DataSetExplorerUtil(this.datasetApp, this.request,this.context);
         final SimpleImageAccessInputParameters inputParameters = new SimpleImageAccessInputParameters(datasetApp, request, this.context, this.resourceModel);
         
         // Get query parameters
         final DatabaseRequestParameters dbParams = dsExplorerUtil.getDatabaseParams();
-        //TEST 2
         final AbstractSqlGeometryConstraint sql = SqlGeometryFactory.create(String.valueOf(this.resourceModel.getParameterByName(SimpleImageAccessProtocolLibrary.INTERSECT).getValue()));
         sql.setInputParameters(inputParameters);
         final Object geometry = (Util.isNotEmpty(this.resourceModel.getParameterByName(SimpleImageAccessProtocolLibrary.GEO_ATTRIBUT).getValue()))
@@ -127,39 +148,37 @@ public class CutOutVoResource {
             predicatList.add(predicat);
             dbParams.setPredicats(predicatList);
         }
-        //
+        
         // Get dataset records
         DatabaseRequest databaseRequest  = DatabaseRequestFactory.getDatabaseRequest(dbParams);
         try {
             // Execute query
         
             databaseRequest.createRequest();
-           
-            String fileName = null;
+
+            String primaryKeyName = databaseRequest.getPrimaryKeys().get(0);
+            String urlCutFitsFile = null;
             String fileNameCut = null;
             
-            String primaryKeyName = databaseRequest.getPrimaryKeys().get(0);
-            
-            String urlCutFitsFileTmp = null;
             while (databaseRequest.nextResult()){
-                int primaryKeyValue = -1;
-                Record rec = databaseRequest.getRecord();
-                List<AttributeValue> listRec = rec.getAttributeValues();
-                for(AttributeValue a : listRec){
-                  if(a.getName().equalsIgnoreCase("filename")){
-                      fileName = a.getValue().toString();
-                      fileNameCut = new StringBuilder(fileName).insert(fileName.lastIndexOf("."), "_cut_"+sizeInput+"deg").toString();
-                  }else if(a.getName().equalsIgnoreCase(primaryKeyName)){
-                      primaryKeyValue = Integer.parseInt(a.getValue().toString());
+                String primaryKeyValue = null;
+                Record recs = databaseRequest.getRecord();
+                List<AttributeValue> listRec = recs.getAttributeValues();
+                for(AttributeValue rec : listRec){
+                  if(rec.getName().equalsIgnoreCase("filename")){
+                      //fileName = rec.getValue().toString();
+                      fileNameCut = new StringBuilder(rec.getValue().toString()).insert(rec.getValue().toString().lastIndexOf("."), "_cut_"+sizeInput+"deg").toString();
+                  }else if(rec.getName().equalsIgnoreCase(primaryKeyName)){
+                      primaryKeyValue = rec.getValue().toString();
                   }
                 }
-                urlCutFitsFileTmp = urlServicesCutOut+primaryKeyName+"%7C"+primaryKeyValue+"&fileName="+fileNameCut+"&RA="+posInput.split(",")[0]+"&DEC="+posInput.split(",")[1]
-                    +"&Radius="+sizeInput+"&OutputFormat=FITS";
-                urlCutFitsFiles.put(primaryKeyValue, urlCutFitsFileTmp);   
+                urlCutFitsFile = this.urlServicesCutOut+primaryKeyName+"%7C"+primaryKeyValue+"&amp;fileName="+fileNameCut+"&amp;RA="+posInput.split(",")[0]+"&amp;DEC="+posInput.split(",")[1]
+                    +"&amp;Radius="+sizeInput+"&amp;OutputFormat=FITS";
+                urlCutFitsFiles.put(primaryKeyValue, urlCutFitsFile);   
             }
         } catch (SitoolsException ex) {
             Logger.getLogger(CutOutVoResource.class.getName()).log(Level.SEVERE, null, ex);
-        } 
+        }
         return urlCutFitsFiles;
     }
     

@@ -32,14 +32,12 @@ import fr.cnes.sitools.dataset.model.Predicat;
 import fr.cnes.sitools.dictionary.model.Concept;
 import fr.cnes.sitools.plugins.resources.model.ResourceModel;
 import fr.cnes.sitools.util.Util;
-import freemarker.template.TemplateModelException;
 import freemarker.template.TemplateSequenceModel;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -66,7 +64,15 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
    * Data model.
    */
   private final transient Map dataModel = new HashMap();
-
+  
+  /**
+   * Service Name
+   */
+  private final String serviceName;
+  /**
+   * 
+   */
+  private HashMap<String,String> urls;
   /**
    * Constructor.
    *
@@ -74,7 +80,16 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
    * @param model data model
    */
   public SimpleImageAccessResponse(final SimpleImageAccessInputParameters inputParameters, final ResourceModel model) {
-    createResponse(inputParameters, model);
+      this.serviceName = model.getParameterByName("Image service").getValue();
+      this.urls = null;
+      createResponse(inputParameters, model);
+    
+  }
+  public SimpleImageAccessResponse(final SimpleImageAccessInputParameters inputParameters, final ResourceModel model, HashMap<String,String> urls) {
+      this.serviceName = model.getParameterByName("Image service").getValue();
+      this.urls = urls;
+      createResponse(inputParameters, model);
+    
   }
 
   /**
@@ -150,7 +165,10 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
    */
   private void setVotableResource(final DataSetApplication datasetApp, final SimpleImageAccessInputParameters inputParameters,
           final ResourceModel model, final String dictionaryName) {
+     System.out.println("******************** DANS LE SETVOTABLERESOURCE *******************************************");
+    
     final List<Field> fieldList = new ArrayList<Field>();
+    
     final List<String> columnList = new ArrayList<String>();
     DatabaseRequest databaseRequest = null;
 
@@ -172,19 +190,19 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
       // complete data model with fields
       setFields(fieldList, columnList, mappingList);
       dataModel.put("fields", fieldList);
-      dataModel.put("sqlColAlias", columnList);
-      for(String col : columnList){
-          LOG.severe("*************************************** col : "+col);
-      }
 
+      dataModel.put("sqlColAlias", columnList);
       // Complete data model with data
       final int count = (databaseRequest.getCount() > dbParams.getPaginationExtend()) ? dbParams.getPaginationExtend() : databaseRequest.getCount();     
       final ConverterChained converterChained = datasetApp.getConverterChained();
       final TemplateSequenceModel rows = new DatabaseRequestModel(databaseRequest, converterChained);
       ((DatabaseRequestModel) rows).setSize(count);
-      
-      dataModel.put("rows", rows);
 
+      dataModel.put("urls", this.urls); 
+      dataModel.put("rows", rows);
+            
+      
+/*    
       for( Iterator ii = dataModel.keySet().iterator(); ii.hasNext();) {
         String key = (String)ii.next();
         
@@ -206,7 +224,7 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
         }
 
       }
-      
+      */
     } catch (SitoolsException ex) {
       try {
         if (Util.isSet(databaseRequest)) {
@@ -365,6 +383,8 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
       String descriptionValue = null;
       columnList.add(mappingIter.getColumnAlias());
       final Concept concept = mappingIter.getConcept();
+      if(!concept.getName().equalsIgnoreCase("L2_id")){
+     
       if (concept.getName() != null) {
         name = concept.getName();
       }
@@ -423,6 +443,17 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
       anyText.getContent().add(descriptionValue);
       field.setDESCRIPTION(anyText);
       fieldList.add(field);
+       }else{
+          final Field field = new Field();
+          field.setName("AccessRef");
+          field.setUcd("VOX:Image_AccessReference");
+          field.setDatatype(DataType.CHAR);
+          field.setArraysize("*");
+          final AnyTEXT anyText = new AnyTEXT();
+          anyText.getContent().add("URL to be used to access or retrieve the image");
+          field.setDESCRIPTION(anyText);
+          fieldList.add(field);
+      }
     }
   }
 
@@ -436,16 +467,29 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
    */
   private List<ColumnConceptMappingDTO> checkRequiredMapping(final List<ColumnConceptMappingDTO> mappingList, final int verb)
           throws SitoolsException {
-    final int nbConceptToMap = SimpleImageAccessProtocolLibrary.REQUIRED_UCD_CONCEPTS.size();
+      final int nbConceptToMap;
+      if(this.serviceName.equalsIgnoreCase("Image Cutout Service")){
+        nbConceptToMap = SimpleImageAccessProtocolLibrary.REQUIRED_UCD_CONCEPTS_CUT_OUT.size();
+      }else{
+        nbConceptToMap = SimpleImageAccessProtocolLibrary.REQUIRED_UCD_CONCEPTS.size();
+      }
     int nbConcept = 0;
     final List<ColumnConceptMappingDTO> conceptToMap = new ArrayList<ColumnConceptMappingDTO>(mappingList);
     for (ColumnConceptMappingDTO mappingIter : mappingList) {
       final Concept concept = mappingIter.getConcept();
       final String ucdValue = concept.getPropertyFromName("ucd").getValue();
-      if (Util.isNotEmpty(ucdValue) && SimpleImageAccessProtocolLibrary.REQUIRED_UCD_CONCEPTS.contains(ucdValue)) {
-        nbConcept++;
-      } else if (verb == 1) {
-        conceptToMap.remove(mappingIter);
+      if(!this.serviceName.equalsIgnoreCase("Image Cutout Service")){
+        if (Util.isNotEmpty(ucdValue) && SimpleImageAccessProtocolLibrary.REQUIRED_UCD_CONCEPTS.contains(ucdValue)) {
+            nbConcept++;
+        } else if (verb == 1) {
+            conceptToMap.remove(mappingIter);
+        }
+       }else{
+          if (Util.isNotEmpty(ucdValue) && SimpleImageAccessProtocolLibrary.REQUIRED_UCD_CONCEPTS_CUT_OUT.contains(ucdValue)) {
+            nbConcept++;
+        } else if (verb == 1) {
+            conceptToMap.remove(mappingIter);
+        }
       }
     }
 
@@ -457,7 +501,7 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
       buffer.append("must be mapped");
       throw new SitoolsException(buffer.toString());
     }
-
+    
     return conceptToMap;
 
   }

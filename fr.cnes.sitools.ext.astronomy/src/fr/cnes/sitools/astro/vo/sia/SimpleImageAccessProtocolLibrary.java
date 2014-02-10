@@ -18,19 +18,15 @@
  ******************************************************************************/
 package fr.cnes.sitools.astro.vo.sia;
 
-import fr.cnes.sitools.astro.representation.DatabaseRequestModel;
 import fr.cnes.sitools.astro.representation.VOTableRepresentation;
 import fr.cnes.sitools.dataset.DataSetApplication;
 import fr.cnes.sitools.plugins.resources.model.ResourceModel;
-import freemarker.template.TemplateModel;
-import freemarker.template.TemplateModelException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.ivoa.xml.votable.v1.DataType;
 import org.restlet.Context;
@@ -90,6 +86,16 @@ public class SimpleImageAccessProtocolLibrary {
                                                     "VOX:Image_Scale",
                                                     "VOX:Image_Format",
                                                     "VOX:Image_AccessReference");
+  /**
+   * 
+   */
+  public static final List REQUIRED_UCD_CONCEPTS_CUT_OUT = Arrays.asList("VOX:Image_Title",
+                                                    "POS_EQ_RA_MAIN",
+                                                    "POS_EQ_DEC_MAIN",
+                                                    "VOX:Image_Naxes",
+                                                    "VOX:Image_Naxis",
+                                                    "VOX:Image_Scale",
+                                                    "VOX:Image_Format");
   /**
    *
    */
@@ -648,6 +654,15 @@ public class SimpleImageAccessProtocolLibrary {
   //public enum ImageFormat{}
 
   /**
+   * Service Name
+   */
+  private final String serviceName;
+  /**
+   * 
+   */
+  private final HashMap<String,String> urls;
+  
+  /**
    * Constructor.
    *
    * @param datasetApp Dataset Application
@@ -660,8 +675,26 @@ public class SimpleImageAccessProtocolLibrary {
     this.resourceModel = resourceModel;
     this.request = request;
     this.context = context;
+    this.urls = null;
+    this.serviceName = resourceModel.getParameterByName("Image service").getValue();
   }
-
+ /**
+   * Constructor.
+   *
+   * @param datasetApp Dataset Application
+   * @param resourceModel Data model
+   * @param request Request
+   * @param context Context
+   */
+  public SimpleImageAccessProtocolLibrary(final DataSetApplication datasetApp, final ResourceModel resourceModel, final Request request, final Context context,HashMap<String,String> urls) {
+    this.datasetApp = datasetApp;
+    this.resourceModel = resourceModel;
+    this.request = request;
+    this.context = context;
+    this.urls = urls;
+    this.serviceName = resourceModel.getParameterByName("Image service").getValue();
+  }
+  
   /**
    * Fill data Model that will be used in the template.
    *
@@ -673,12 +706,17 @@ public class SimpleImageAccessProtocolLibrary {
 
     // Handling input parameters
     final DataModelInterface inputParameters = new SimpleImageAccessInputParameters(datasetApp, request, this.context, this.resourceModel);
-
+    
     // data model response
     if (inputParameters.getDataModel().containsKey("infos")) {
       dataModel = inputParameters.getDataModel();
     } else {
-      final SimpleImageAccessDataModelInterface response = new SimpleImageAccessResponse((SimpleImageAccessInputParameters) inputParameters, resourceModel);
+        SimpleImageAccessDataModelInterface response  = null;
+        if(this.serviceName.equalsIgnoreCase(ImageService.IMAGE_CUTOUT_SERVICE.getServiceName())){
+            response = new SimpleImageAccessResponse((SimpleImageAccessInputParameters) inputParameters, resourceModel, this.urls);
+        }else{
+            response = new SimpleImageAccessResponse((SimpleImageAccessInputParameters) inputParameters, resourceModel);
+        }
       dataModel = response.getDataModel();
     }
     return dataModel;
@@ -691,6 +729,11 @@ public class SimpleImageAccessProtocolLibrary {
    */
   public final VOTableRepresentation getResponse() {
     final Map dataModel = fillDataModel();
-    return new VOTableRepresentation(dataModel);
+    if(this.serviceName.equalsIgnoreCase(ImageService.IMAGE_CUTOUT_SERVICE.getServiceName())){
+            return new VOTableRepresentation(dataModel,"votableCutOut.ftl");
+        }else{
+            return new VOTableRepresentation(dataModel);
+        }
+    
   }  
 }

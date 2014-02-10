@@ -222,7 +222,19 @@ public class SimpleImageAccessResourcePlugin extends ResourceModel {
                 
                 final ResourceParameter urlCutOutService = params.get("urlCutOutService");
                 final ResourceParameter serviceType = params.get(fr.cnes.sitools.astro.vo.sia.SimpleImageAccessProtocolLibrary.SERVICE_NAME);
-                //if(serviceType.getValue().equ)
+                if(serviceType.getValue().equalsIgnoreCase("Image Cutout Service") && !Util.isNotEmpty(urlCutOutService.getValue())){
+                    final ConstraintViolation constraint = new ConstraintViolation();
+                    constraint.setLevel(ConstraintViolationLevel.CRITICAL);
+                    constraint.setMessage("urlCutOutService must be defined when Image Cutout Service is used.");
+                    constraint.setValueName("urlCutOutService");
+                    constraintList.add(constraint);
+                }else if(serviceType.getValue().equalsIgnoreCase("Image Cutout Service") && urlCutOutService.getValue().charAt(0) != '/'){
+                    final ConstraintViolation constraint = new ConstraintViolation();
+                     constraint.setLevel(ConstraintViolationLevel.CRITICAL);
+                     constraint.setMessage("urlCutOutService must begin with '/' ");
+                     constraint.setValueName("urlCutOutService");
+                     constraintList.add(constraint);
+                }
                 
                 return constraintList;
             }

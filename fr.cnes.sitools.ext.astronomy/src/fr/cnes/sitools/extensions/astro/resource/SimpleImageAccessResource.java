@@ -38,6 +38,8 @@ import org.restlet.representation.Representation;
 import org.restlet.representation.Variant;
 import org.restlet.resource.Get;
 
+import fr.ias.sitools.server.Constante.Const;
+
 /**
  * Queries the dataset and retrieves the result using the Simple Image Access Protocol.
  * @see SimpleImageAccessResourcePlugin the plugin
@@ -58,7 +60,12 @@ public class SimpleImageAccessResource extends SitoolsParameterizedResource {
   public final void doInit() {
     super.doInit();
   }
-
+  
+  /**
+   * 
+   */
+  private final transient String urlHostDomain = getSitoolsSetting(Const.APP_HOST_DOMAIN);
+  
   /**
    * Returns the supported representation.
    *
@@ -83,14 +90,15 @@ public class SimpleImageAccessResource extends SitoolsParameterizedResource {
     LOG.finest(String.format("SIA : %s", getRequest()));
     //TEST MARC
     String serviceName = this.getModel().getParameterByName("Image service").getValue();
-    if(serviceName.equalsIgnoreCase("Image Cutout Service")){
+    if(serviceName.equalsIgnoreCase(SimpleImageAccessProtocolLibrary.ImageService.IMAGE_CUTOUT_SERVICE.getServiceName())){
         LOG.warning("**********    ON EST BIEN DANS LE CUT OUT");
         // APPEL DE LA CLASSE CUTOUTVORESOURCE POUR CRRER LES URL DES FITS COUPES A INJECTER DANS LA VOTABLE
         CutOutVoResource cut = new CutOutVoResource(this.getRequest(), this.getContext(),(DataSetApplication) this.getApplication(), this.getModel());
-        HashMap<Integer,String> urlCutFitsFiles = cut.execute();
+        HashMap<String,String> urlCutFitsFiles = cut.execute();
+
         // APPEL DU SIAP POUR CREER LA REPONSE VOTABLE
         final SimpleImageAccessProtocolLibrary sia = new SimpleImageAccessProtocolLibrary((DataSetApplication) this.getApplication(),
-            this.getModel(), this.getRequest(), this.getContext());
+            this.getModel(), this.getRequest(), this.getContext(),urlCutFitsFiles);
         rep = sia.getResponse();
         if (fileName != null && !"".equals(fileName)) {
             final Disposition disp = new Disposition(Disposition.TYPE_ATTACHMENT);
@@ -98,7 +106,7 @@ public class SimpleImageAccessResource extends SitoolsParameterizedResource {
             rep.setDisposition(disp);
         }
         return rep;
-    }else if(serviceName.equalsIgnoreCase("Pointed Image Archive")){
+    }else if(serviceName.equalsIgnoreCase(SimpleImageAccessProtocolLibrary.ImageService.POINTED_IMAGE_ARCHIVE.getServiceName())){
         LOG.warning("**********    ON EST BIEN DANS LE SIA Pointed Archive Image");
         final SimpleImageAccessProtocolLibrary sia = new SimpleImageAccessProtocolLibrary((DataSetApplication) this.getApplication(),
             this.getModel(), this.getRequest(), this.getContext());
