@@ -24,7 +24,6 @@ import fr.cnes.sitools.astro.vo.sia.AbstractSqlGeometryConstraint;
 import fr.cnes.sitools.astro.vo.sia.SimpleImageAccessInputParameters;
 import fr.cnes.sitools.astro.vo.sia.SimpleImageAccessProtocolLibrary;
 import fr.cnes.sitools.astro.vo.sia.SqlGeometryFactory;
-
 import fr.cnes.sitools.common.exception.SitoolsException;
 import fr.cnes.sitools.dataset.DataSetApplication;
 import fr.cnes.sitools.dataset.database.DatabaseRequest;
@@ -34,14 +33,12 @@ import fr.cnes.sitools.dataset.database.common.DataSetExplorerUtil;
 import fr.cnes.sitools.dataset.model.Predicat;
 import fr.cnes.sitools.datasource.jdbc.model.AttributeValue;
 import fr.cnes.sitools.datasource.jdbc.model.Record;
-
 import fr.cnes.sitools.plugins.resources.model.ResourceModel;
 import fr.cnes.sitools.util.Util;
 import fr.cnes.sitools.common.resource.SitoolsParameterizedResource;
 import fr.ias.sitools.server.Constante.Const;
 
 import java.util.Arrays;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,13 +46,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.restlet.Context;
 import org.restlet.Request;
-
-
 // FIN DES IMPORTS
 
 /**
  *
- * @author marc
+ * @author Mnicolas@IAS
  */
 public class CutOutVoResource extends SitoolsParameterizedResource {
     
@@ -63,32 +58,40 @@ public class CutOutVoResource extends SitoolsParameterizedResource {
    * Logger.
    */
     private static final Logger LOG = Logger.getLogger(CutOutVoResource.class.getName());
-      /**
+   
+    /**
    * Data model that stores the metadata response of the service.
    */
     private final transient Map dataModel = new HashMap();
+    
     /**
      * Request.
     */
     private final transient Request request;
+    
     /**
     * Context.
     */
     private final transient Context context;
+    
     /**
     * Application where this resources is linked.
     */
     private final transient DataSetApplication datasetApp;
+    
     /**
     * Configuration parameters of this resource.
     */
     private final transient ResourceModel resourceModel;
     
+    /**
+     * The url of the Sitools2 Instance
+     */
     private final transient String urlHostDomain = getSitoolsSetting(Const.APP_HOST_DOMAIN);
+    
     /**
      * Url du du CutOut Services pour un ds
      */
-    //private final transient String urlServicesCutOutTmp = "?1=1&amp;p[0]=LISTBOXMULTIPLE|";
     private final transient String apiStringListBox = "?1=1&amp;p[0]=LISTBOXMULTIPLE|";
         
     /**
@@ -100,10 +103,12 @@ public class CutOutVoResource extends SitoolsParameterizedResource {
      * The Complete Url of the cut fits
      */
     private final String urlServicesCutOut;
+    
     /**
      * The Url Of the PlugIn Cut Out
      */
     private final String urlPlugInCutOut;
+    
     /**
      * @param request
      * @param context
@@ -181,5 +186,22 @@ public class CutOutVoResource extends SitoolsParameterizedResource {
         }
         return urlCutFitsFiles;
     }
+
     
+    /**
+     * Getter of the Url services Cut Out
+     * @return url of the services Cut Out
+     */
+    public String getUrlServicesCutOut() {
+        return this.urlServicesCutOut;
+    }
+
+    /**
+     * Getter of the Url Cut Out Plug In
+     * @return url of the plugin Cut Out
+     */
+    public String getUrlPlugInCutOut() {
+        return this.urlPlugInCutOut;
+    }
+
 }

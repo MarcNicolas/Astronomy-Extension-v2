@@ -91,7 +91,6 @@ public class SimpleImageAccessResource extends SitoolsParameterizedResource {
     //TEST MARC
     String serviceName = this.getModel().getParameterByName("Image service").getValue();
     if(serviceName.equalsIgnoreCase(SimpleImageAccessProtocolLibrary.ImageService.IMAGE_CUTOUT_SERVICE.getServiceName())){
-        LOG.warning("**********    ON EST BIEN DANS LE CUT OUT");
         // APPEL DE LA CLASSE CUTOUTVORESOURCE POUR CRRER LES URL DES FITS COUPES A INJECTER DANS LA VOTABLE
         CutOutVoResource cut = new CutOutVoResource(this.getRequest(), this.getContext(),(DataSetApplication) this.getApplication(), this.getModel());
         HashMap<String,String> urlCutFitsFiles = cut.execute();
@@ -107,7 +106,6 @@ public class SimpleImageAccessResource extends SitoolsParameterizedResource {
         }
         return rep;
     }else if(serviceName.equalsIgnoreCase(SimpleImageAccessProtocolLibrary.ImageService.POINTED_IMAGE_ARCHIVE.getServiceName())){
-        LOG.warning("**********    ON EST BIEN DANS LE SIA Pointed Archive Image");
         final SimpleImageAccessProtocolLibrary sia = new SimpleImageAccessProtocolLibrary((DataSetApplication) this.getApplication(),
             this.getModel(), this.getRequest(), this.getContext());
         //final Representation rep = sia.getResponse();

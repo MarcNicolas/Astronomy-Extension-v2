@@ -111,6 +111,7 @@ public class SimpleImageAccessInputParameters implements DataModelInterface {
     if (Util.isSet(format) && format.equals(SimpleImageAccessProtocolLibrary.ParamStandardFormat.METADATA.name())) {
       fillMetadataFormat();
     } else {
+        
       checkInputParameters(posInput, sizeInput);
     }
   }
@@ -119,6 +120,7 @@ public class SimpleImageAccessInputParameters implements DataModelInterface {
    * Fills metadata response.
    */
   private void fillMetadataFormat() {
+      
     this.dataModel.put("description", this.resourceModel.getParameterByName(SimpleImageAccessProtocolLibrary.DESCRIPTION).getValue());
 
     final Info info = new Info();
@@ -127,7 +129,7 @@ public class SimpleImageAccessInputParameters implements DataModelInterface {
     final List<Info> listInfos = new ArrayList<Info>();
     listInfos.add(info);
     this.dataModel.put("infos", listInfos);
-
+   
     final List<Param> listParam = new ArrayList<Param>();
     Param param = new Param();
     param.setName("INPUT:POS");
@@ -165,7 +167,7 @@ public class SimpleImageAccessInputParameters implements DataModelInterface {
     param.setVALUES(values);
     //TODO : le faire pour chaque format
     listParam.add(param);
-
+    
     param = new Param();
     param.setName("INPUT:INTERSECT");
     param.setValue(this.resourceModel.getParameterByName(SimpleImageAccessProtocolLibrary.INTERSECT).getValue());
@@ -216,7 +218,8 @@ public class SimpleImageAccessInputParameters implements DataModelInterface {
             this.size = new double[2];
             this.size[0] = Double.valueOf(arraySize[0]);
             this.size[1] = Double.valueOf(arraySize[1]);
-        }        
+        }
+        
     } else {
         final Map<String, String> errors = status.getMessages();
         final Set<Map.Entry<String, String>> entries = errors.entrySet();        
@@ -233,7 +236,6 @@ public class SimpleImageAccessInputParameters implements DataModelInterface {
     if (!infos.isEmpty()) {
       this.dataModel.put("infos", infos);
     }
-
   }
 
   @Override

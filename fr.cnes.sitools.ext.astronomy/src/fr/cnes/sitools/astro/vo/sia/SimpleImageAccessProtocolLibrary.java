@@ -651,7 +651,6 @@ public class SimpleImageAccessProtocolLibrary {
       return this.dataType;
     }
   };
-  //public enum ImageFormat{}
 
   /**
    * Service Name
@@ -706,10 +705,9 @@ public class SimpleImageAccessProtocolLibrary {
 
     // Handling input parameters
     final DataModelInterface inputParameters = new SimpleImageAccessInputParameters(datasetApp, request, this.context, this.resourceModel);
-    
     // data model response
     if (inputParameters.getDataModel().containsKey("infos")) {
-      dataModel = inputParameters.getDataModel();
+        dataModel = inputParameters.getDataModel();
     } else {
         SimpleImageAccessDataModelInterface response  = null;
         if(this.serviceName.equalsIgnoreCase(ImageService.IMAGE_CUTOUT_SERVICE.getServiceName())){
