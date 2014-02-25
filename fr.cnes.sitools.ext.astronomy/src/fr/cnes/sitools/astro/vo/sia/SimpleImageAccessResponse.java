@@ -191,12 +191,22 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
       
       // Execute query
       databaseRequest.createRequest();
-      //------------- TEST MARC-----------------------
+      //------------- MODIFICATION DE MARC-----------------------
       dataModel.put("NbCount", databaseRequest.getCount());
-      String primaryKeyName = databaseRequest.getPrimaryKeys().get(0);
-      dataModel.put("primaryKeyName", primaryKeyName);
       
-      //------------  FIN TEST ----------------------
+      if(this.urls != null){
+        String primaryKeyName = databaseRequest.getPrimaryKeys().get(0);
+        dataModel.put("primaryKeyName", primaryKeyName);
+        dataModel.put("urls", this.urls); 
+      }
+      // On renseigne le champ query status à OK vu que tout c'est bien passé.
+      final List<Info> infos = new ArrayList<Info>();
+      List<Param> paramaQuery = new ArrayList<Param>();
+      setQueryOk(infos);
+      setQueryParams(paramaQuery);
+      dataModel.put("infos", infos);
+      dataModel.put("paramaQuery",paramaQuery);
+      //------------  FIN MODIFICATION ----------------------
 
       datasetApp.getLogger().log(Level.FINEST, "DB request: {0}", databaseRequest.getRequestAsString());
 
@@ -211,16 +221,9 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
       final ConverterChained converterChained = datasetApp.getConverterChained();
       final TemplateSequenceModel rows = new DatabaseRequestModel(databaseRequest, converterChained);
       ((DatabaseRequestModel) rows).setSize(count);
-
-      dataModel.put("urls", this.urls); 
+      
       dataModel.put("rows", rows);
-      // On renseigne le champ query status à OK vu que tout c'est bien passé.
-      final List<Info> infos = new ArrayList<Info>();
-      List<Param> paramaQuery = new ArrayList<Param>();
-      setQueryOk(infos);
-      setQueryParams(paramaQuery);
-      dataModel.put("infos", infos);
-      dataModel.put("paramaQuery",paramaQuery);
+      
       
     } catch (SitoolsException ex) {
       try {
@@ -505,6 +508,10 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
 
   }
   
+  /**
+   * Set the Infos parameters to the VoTable
+   * @param listInfos List of Infos
+   */
   private void setQueryOk(List<Info> listInfos){
       final Info info = new Info();
       info.setName("QUERY_STATUS");
@@ -512,6 +519,10 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
       listInfos.add(info);
   }
   
+  /**
+   * Set the Query parameters to the VoTable
+   * @param listParams List of parameters
+   */
   private void setQueryParams(List<Param> listParams){
       try{
         String sizeInput = "";

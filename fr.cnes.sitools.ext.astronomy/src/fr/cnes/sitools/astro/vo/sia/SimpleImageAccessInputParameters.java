@@ -21,7 +21,7 @@ package fr.cnes.sitools.astro.vo.sia;
 import fr.cnes.sitools.dataset.DataSetApplication;
 import fr.cnes.sitools.extensions.common.InputsValidation;
 import fr.cnes.sitools.extensions.common.NotNullAndNotEmptyValidation;
-import fr.cnes.sitools.extensions.common.SpatialGeoValidation;
+import fr.cnes.sitools.extensions.common.SpatialGeoValidation; 
 import fr.cnes.sitools.extensions.common.StatusValidation;
 import fr.cnes.sitools.extensions.common.Validation;
 import fr.cnes.sitools.plugins.resources.model.ResourceModel;
