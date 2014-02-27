@@ -109,7 +109,7 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
   private void createResponse(final SimpleImageAccessInputParameters inputParameters, final ResourceModel model) {
     // createResponse
     final String dictionaryName = model.getParameterByName(SimpleImageAccessProtocolLibrary.DICTIONARY).getValue();
-
+    LOG.severe("------------------------------  -------------- dictionaryName : "+dictionaryName);
     inputParameters.getDatasetApplication().getLogger().log(Level.FINEST, "DICO: {0}", dictionaryName);
 
     // Set Votable parameters
@@ -182,9 +182,10 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
     try {
       // Get the concepts from the dictionary
       List<ColumnConceptMappingDTO> mappingList = getDicoFromConfiguration(datasetApp, dictionaryName);
-
+      for(ColumnConceptMappingDTO a : mappingList){
+          LOG.severe("--------------------------------------  a : "+a.getConcept().getName());
+      }
       mappingList = checkRequiredMapping(mappingList, inputParameters.getVerb());
-
       // Get query parameters
       final DatabaseRequestParameters dbParams = setQueryParameters(datasetApp, model, inputParameters, mappingList);
       databaseRequest = DatabaseRequestFactory.getDatabaseRequest(dbParams);
@@ -352,6 +353,7 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
     for (DictionaryMappingDTO dicoMappingIter : dicoMappingList) {
       final String dicoName = dicoMappingIter.getDictionaryName();
       if (dicoToFind.equals(dicoName)) {
+          
         colConceptMappingDTOList = dicoMappingIter.getMapping();
         break;
       }
@@ -480,6 +482,7 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
     for (ColumnConceptMappingDTO mappingIter : mappingList) {
       final Concept concept = mappingIter.getConcept();
       final String ucdValue = concept.getPropertyFromName("ucd").getValue();
+      
       if(!this.serviceName.equalsIgnoreCase("Image Cutout Service")){
         if (Util.isNotEmpty(ucdValue) && SimpleImageAccessProtocolLibrary.REQUIRED_UCD_CONCEPTS.contains(ucdValue)) {
             nbConcept++;
@@ -489,20 +492,37 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
        }else{
           if (Util.isNotEmpty(ucdValue) && SimpleImageAccessProtocolLibrary.REQUIRED_UCD_CONCEPTS_CUT_OUT.contains(ucdValue)) {
             nbConcept++;
+            
         } else if (verb == 1) {
+            LOG.severe("--------------------------------------- JE SUIS DANS LE  else if (verb == 1) ");
             conceptToMap.remove(mappingIter);
+        }else{
+            LOG.severe("--------------------------------------- JE SUIS DANS LE  else et  ucdValue : "+ucdValue);
+            
         }
       }
     }
-
+    LOG.severe("--------------------------------------- nbConceptToMap : "+nbConceptToMap+"   ***************   nbConcept : "+nbConcept);
     if (nbConceptToMap != nbConcept) {
       final StringBuilder buffer = new StringBuilder("columns with ");
       for (ColumnConceptMappingDTO mappingIter : mappingList) {
+        LOG.info("---------*********************----------------- TEST : "+mappingIter.getColumnAlias());
         buffer.append(mappingIter.getConcept().getName()).append(" ");
       }
       buffer.append("must be mapped");
       throw new SitoolsException(buffer.toString());
     }
+    /*   CODE ORIGINAL
+    if (nbConceptToMap != nbConcept) {
+      final StringBuilder buffer = new StringBuilder("columns with ");
+      for (ColumnConceptMappingDTO mappingIter : mappingList) {
+          LOG.severe("--------------------------------------- mappingIter.getConcept().getName() : "+mappingIter.getConcept().getName());
+        buffer.append(mappingIter.getConcept().getName()).append(" ");
+      }
+      buffer.append("must be mapped");
+      throw new SitoolsException(buffer.toString());
+    }
+    */
     
     return conceptToMap;
 
@@ -545,7 +565,7 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
         param.setName("SIZE");
         param.setDatatype(DataType.DOUBLE);
         param.setValue(sizeInput);
-        param.setUnit("deg");
+        param.setUnit("deg"); 
         listParams.add(param);
       
         param = new Param();

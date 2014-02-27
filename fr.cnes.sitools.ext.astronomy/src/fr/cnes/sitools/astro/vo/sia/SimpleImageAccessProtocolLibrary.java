@@ -89,13 +89,16 @@ public class SimpleImageAccessProtocolLibrary {
   /**
    * 
    */
-  public static final List REQUIRED_UCD_CONCEPTS_CUT_OUT = Arrays.asList("VOX:Image_Title",
+  public static final List REQUIRED_UCD_CONCEPTS_CUT_OUT = Arrays.asList(
+                                                    "ID_TABLE",
+                                                    "VOX:Image_Title",
                                                     "POS_EQ_RA_MAIN",
                                                     "POS_EQ_DEC_MAIN",
                                                     "VOX:Image_Naxes",
                                                     "VOX:Image_Naxis",
                                                     "VOX:Image_Scale",
-                                                    "VOX:Image_Format");
+                                                    "VOX:Image_Format"
+                                                    );
   /**
    *
    */
