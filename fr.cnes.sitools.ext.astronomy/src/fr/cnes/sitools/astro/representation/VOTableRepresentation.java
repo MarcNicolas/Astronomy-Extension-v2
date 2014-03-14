@@ -87,7 +87,12 @@ import org.restlet.resource.ClientResource;
  *    |     |__ row (required)
  *    |
  *    |__ sqlColAlias (List) (required)
- *          |__ sqlcol (required)
+ *    |      |__ sqlcol (required)
+ *    |__ mappingColAliasConceptSql (Hash) (optional)
+ *    |__ siaCut (boolean, optional)
+ *    |__ nrows (optional)
+ *    |__ mapPartFileCutUrl (Hash) (optional)
+ *    |__ primaryKey (optional)
  *
  * </pre> Provide a VOTable representation by streaming based on Freemarker To have a dataModel by streaming, dataModel for rows element
  * must use the DatabaseRequestModel adapter
@@ -141,8 +146,8 @@ public class VOTableRepresentation extends OutputRepresentation {
   @Override
   public final void write(final OutputStream outputStream) throws IOException {
     final Representation metadataFtl = new ClientResource(LocalReference.createClapReference(getClass().getPackage()) + "/"
-            + getFtl()).get();
-    final TemplateRepresentation tpl = new TemplateRepresentation(metadataFtl, getDataModel(), getMediaType());
+            + getFtl()).get();       
+    final TemplateRepresentation tpl = new TemplateRepresentation(metadataFtl, getDataModel(), getMediaType());    
     LOG.log(Level.FINEST, getFtl(), tpl);
     outputStream.write(tpl.getText().getBytes());
     outputStream.flush();

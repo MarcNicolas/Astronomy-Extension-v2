@@ -19,6 +19,8 @@
 package fr.cnes.sitools.astro.vo.sia;
 
 import fr.cnes.sitools.astro.representation.DatabaseRequestModel;
+import fr.cnes.sitools.common.SitoolsSettings;
+import fr.cnes.sitools.common.application.ContextAttributes;
 import fr.cnes.sitools.common.exception.SitoolsException;
 import fr.cnes.sitools.dataset.DataSetApplication;
 import fr.cnes.sitools.dataset.converter.business.ConverterChained;
@@ -48,13 +50,14 @@ import net.ivoa.xml.votable.v1.Field;
 import net.ivoa.xml.votable.v1.Info;
 import net.ivoa.xml.votable.v1.Param;
 
+
 /**
  * Votable response for cone search.
  *
  * @author Jean-Christophe Malapert <jean-christophe.malapert@cnes.fr>
  */
 public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInterface {
-
+    
   /**
    * Logger.
    */
@@ -64,7 +67,48 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
    * Data model.
    */
   private final transient Map dataModel = new HashMap();
-
+  
+  /**
+   * Sitools Settings
+   */
+  private SitoolsSettings sitoolsSettings = null;
+  /**
+   * Url of the dataset.
+   */
+  private String urlDs = null; 
+  /**
+   * Url of the host domain of SiTools2.
+   */
+  private String urlHostDomain = null;
+  /**
+   * Url of the PlugIn  Cut Out required for the cut fits.
+   */
+  private String urlPlugInCutOut = null;
+  /**
+   * Url of the service Cut Out.
+   */
+  private String urlServicesCutOut = null;
+  /**
+   *  Part of the API url of SiTools2.
+   */
+  private final String apiStringListBox = "?1=1&amp;p[0]=LISTBOXMULTIPLE|";
+  /**
+   * Boolean to know if it a Cut out service or not. 
+   */
+  private final boolean siaCut;
+  /**
+   * Right Ascenscion.
+   */
+  private final double ra;
+  /**
+   * Declination.
+   */
+  private final double dec;
+  /**
+   * Size of cut out.
+   */
+  private final String  sizesCut;
+  
   /**
    * Constructor.
    *
@@ -72,7 +116,18 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
    * @param model data model
    */
   public SimpleImageAccessResponse(final SimpleImageAccessInputParameters inputParameters, final ResourceModel model) {
-    createResponse(inputParameters, model);
+    
+      this.siaCut = model.getParameterByName("Image service").getValue().equals(SimpleImageAccessProtocolLibrary.ImageService.IMAGE_CUTOUT_SERVICE.getServiceName());
+      this.sitoolsSettings = (SitoolsSettings) inputParameters.getContext().getAttributes().get(ContextAttributes.SETTINGS);
+      this.urlHostDomain = sitoolsSettings.getString("Starter.PUBLIC_HOST_DOMAIN");
+      this.urlPlugInCutOut = model.getParameterByName("urlCutOutService").getValue();
+      this.urlDs = inputParameters.getDatasetApplication().getDataSet().getSitoolsAttachementForUsers();
+      this.ra = inputParameters.getRa();
+      this.dec = inputParameters.getDec();
+      this.urlServicesCutOut = this.urlHostDomain+this.urlDs+this.urlPlugInCutOut+this.apiStringListBox;
+      this.sizesCut = inputParameters.getRequest().getResourceRef().getQueryAsForm().getFirstValue(SimpleImageAccessProtocolLibrary.SIZE);
+      createResponse(inputParameters, model);
+    
   }
 
   /**
@@ -84,7 +139,7 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
   private void createResponse(final SimpleImageAccessInputParameters inputParameters, final ResourceModel model) {
     // createResponse
     final String dictionaryName = model.getParameterByName(SimpleImageAccessProtocolLibrary.DICTIONARY).getValue();
-
+    
     inputParameters.getDatasetApplication().getLogger().log(Level.FINEST, "DICO: {0}", dictionaryName);
 
     // Set Votable parameters
@@ -92,6 +147,7 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
 
     // Set Votable resources
     setVotableResource(inputParameters.getDatasetApplication(), inputParameters, model, dictionaryName);
+   
   }
 
   /**
@@ -148,6 +204,7 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
    */
   private void setVotableResource(final DataSetApplication datasetApp, final SimpleImageAccessInputParameters inputParameters,
           final ResourceModel model, final String dictionaryName) {
+    String primaryKeyName;  
     final List<Field> fieldList = new ArrayList<Field>();
     final List<String> columnList = new ArrayList<String>();
     DatabaseRequest databaseRequest = null;
@@ -166,14 +223,34 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
       databaseRequest.createRequest();
 
       datasetApp.getLogger().log(Level.FINEST, "DB request: {0}", databaseRequest.getRequestAsString());
-
+      
+      // Get primaryKey and put in the dataModel
+      primaryKeyName = databaseRequest.getPrimaryKeys().get(0);
+      dataModel.put("primaryKey",databaseRequest.getPrimaryKeys().get(0));
+      
       // complete data model with fields
       setFields(fieldList, columnList, mappingList);
       dataModel.put("fields", fieldList);
       dataModel.put("sqlColAlias", columnList);
-
+      Map conceptColAlias = new HashMap();
+       for (ColumnConceptMappingDTO map:mappingList) {
+          conceptColAlias.put(map.getColumnAlias(), map.getConcept().getPropertyFromName("ucd").getValue());
+      }
+      dataModel.put("mappingColAliasConceptSql", conceptColAlias);
+      
+      //complete data model with boolean siaCut.
+      dataModel.put("siaCut", this.siaCut);
+      if(this.siaCut){
+        //Create the map of cut file
+        Map mapPartFileCutUrl = createFileCutUrl(primaryKeyName);
+        // complete dataModel with it.
+        dataModel.put("fileCutUrl", mapPartFileCutUrl);
+      }
+      
+      
       // Complete data model with data
-      final int count = (databaseRequest.getCount() > dbParams.getPaginationExtend()) ? dbParams.getPaginationExtend() : databaseRequest.getCount();     
+      final int count = (databaseRequest.getCount() > dbParams.getPaginationExtend()) ? dbParams.getPaginationExtend() : databaseRequest.getCount();
+      dataModel.put("nrows", count);
       final ConverterChained converterChained = datasetApp.getConverterChained();
       final TemplateSequenceModel rows = new DatabaseRequestModel(databaseRequest, converterChained);
       ((DatabaseRequestModel) rows).setSize(count);
@@ -432,5 +509,20 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
 
     return conceptToMap;
 
+  }
+  /**
+   * Create the template of the url of cut file in a hashMap with 3 parts.
+   * @param primaryKeyName
+   * @return HashMap of the url of cut file
+   */
+  private Map createFileCutUrl(String primaryKeyName){
+      Map mapPartFileCutUrl = new HashMap();
+      String mapPartFileCutUrl1 = this.urlServicesCutOut+primaryKeyName+"%7C";
+      String mapPartFileCutUrl2 = "&amp;fileName=";
+      String mapPartFileCutUrl3 = "&amp;RA="+this.ra+"&amp;DEC="+this.dec+"&amp;Radius="+this.sizesCut+"&amp;OutputFormat=FITS";
+      mapPartFileCutUrl.put("1", mapPartFileCutUrl1);
+      mapPartFileCutUrl.put("2", mapPartFileCutUrl2);
+      mapPartFileCutUrl.put("3", mapPartFileCutUrl3);
+      return mapPartFileCutUrl;
   }
 }
