@@ -19,6 +19,8 @@
 package fr.cnes.sitools.astro.vo.sia;
 
 import fr.cnes.sitools.astro.representation.DatabaseRequestModel;
+import fr.cnes.sitools.common.SitoolsSettings;
+import fr.cnes.sitools.common.application.ContextAttributes;
 import fr.cnes.sitools.common.exception.SitoolsException;
 import fr.cnes.sitools.dataset.DataSetApplication;
 import fr.cnes.sitools.dataset.converter.business.ConverterChained;
@@ -48,13 +50,14 @@ import net.ivoa.xml.votable.v1.Field;
 import net.ivoa.xml.votable.v1.Info;
 import net.ivoa.xml.votable.v1.Param;
 
+
 /**
  * Votable response for cone search.
  *
  * @author Jean-Christophe Malapert <jean-christophe.malapert@cnes.fr>
  */
 public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInterface {
-
+    
   /**
    * Logger.
    */
@@ -66,17 +69,46 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
   private final transient Map dataModel = new HashMap();
   
   /**
-   * Service Name
+   * Sitools Settings
    */
-  private final String serviceName;
+  private SitoolsSettings sitoolsSettings = null;
   /**
-   * 
+   * Url of the dataset.
    */
-  private HashMap<String,String> urls;
+  private String urlDs = null; 
+  /**
+   * Url of the host domain of SiTools2.
+   */
+  private String urlHostDomain = null;
+  /**
+   * Url of the PlugIn  Cut Out required for the cut fits.
+   */
+  private String urlPlugInCutOut = null;
+  /**
+   * Url of the service Cut Out.
+   */
+  private String urlServicesCutOut = null;
+  /**
+   *  Part of the API url of SiTools2.
+   */
+  private final String apiStringListBox = "?1=1&amp;p[0]=LISTBOXMULTIPLE|";
+  /**
+   * Boolean to know if it a Cut out service or not. 
+   */
+  private final boolean siaCut;
+  /**
+   * Right Ascenscion.
+   */
+  private final double ra;
+  /**
+   * Declination.
+   */
+  private final double dec;
+  /**
+   * Size of cut out.
+   */
+  private final String  sizesCut;
   
-  private SimpleImageAccessInputParameters inputParameters;
-  
-  private ResourceModel resourceModel;
   /**
    * Constructor.
    *
@@ -84,18 +116,16 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
    * @param model data model
    */
   public SimpleImageAccessResponse(final SimpleImageAccessInputParameters inputParameters, final ResourceModel model) {
-      this.serviceName = model.getParameterByName("Image service").getValue();
-      this.urls = null;
-      this.resourceModel = model;
-      this.inputParameters = inputParameters;
-      createResponse(inputParameters, model);
     
-  }
-  public SimpleImageAccessResponse(final SimpleImageAccessInputParameters inputParameters, final ResourceModel model, HashMap<String,String> urls) {
-      this.serviceName = model.getParameterByName("Image service").getValue();
-      this.urls = urls;
-      this.resourceModel = model;
-      this.inputParameters = inputParameters;
+      this.siaCut = model.getParameterByName("Image service").getValue().equals(SimpleImageAccessProtocolLibrary.ImageService.IMAGE_CUTOUT_SERVICE.getServiceName());
+      this.sitoolsSettings = (SitoolsSettings) inputParameters.getContext().getAttributes().get(ContextAttributes.SETTINGS);
+      this.urlHostDomain = sitoolsSettings.getString("Starter.PUBLIC_HOST_DOMAIN");
+      this.urlPlugInCutOut = model.getParameterByName("urlCutOutService").getValue();
+      this.urlDs = inputParameters.getDatasetApplication().getDataSet().getSitoolsAttachementForUsers();
+      this.ra = inputParameters.getRa();
+      this.dec = inputParameters.getDec();
+      this.urlServicesCutOut = this.urlHostDomain+this.urlDs+this.urlPlugInCutOut+this.apiStringListBox;
+      this.sizesCut = inputParameters.getRequest().getResourceRef().getQueryAsForm().getFirstValue(SimpleImageAccessProtocolLibrary.SIZE);
       createResponse(inputParameters, model);
     
   }
@@ -109,7 +139,7 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
   private void createResponse(final SimpleImageAccessInputParameters inputParameters, final ResourceModel model) {
     // createResponse
     final String dictionaryName = model.getParameterByName(SimpleImageAccessProtocolLibrary.DICTIONARY).getValue();
-    LOG.severe("------------------------------  -------------- dictionaryName : "+dictionaryName);
+    
     inputParameters.getDatasetApplication().getLogger().log(Level.FINEST, "DICO: {0}", dictionaryName);
 
     // Set Votable parameters
@@ -117,6 +147,7 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
 
     // Set Votable resources
     setVotableResource(inputParameters.getDatasetApplication(), inputParameters, model, dictionaryName);
+   
   }
 
   /**
@@ -173,66 +204,63 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
    */
   private void setVotableResource(final DataSetApplication datasetApp, final SimpleImageAccessInputParameters inputParameters,
           final ResourceModel model, final String dictionaryName) {
-        
+    String primaryKeyName;  
     final List<Field> fieldList = new ArrayList<Field>();
-    
     final List<String> columnList = new ArrayList<String>();
     DatabaseRequest databaseRequest = null;
 
     try {
       // Get the concepts from the dictionary
       List<ColumnConceptMappingDTO> mappingList = getDicoFromConfiguration(datasetApp, dictionaryName);
-      for(ColumnConceptMappingDTO a : mappingList){
-          LOG.severe("--------------------------------------  a : "+a.getConcept().getName());
-      }
+
       mappingList = checkRequiredMapping(mappingList, inputParameters.getVerb());
+
       // Get query parameters
       final DatabaseRequestParameters dbParams = setQueryParameters(datasetApp, model, inputParameters, mappingList);
       databaseRequest = DatabaseRequestFactory.getDatabaseRequest(dbParams);
-      
+
       // Execute query
       databaseRequest.createRequest();
-      //------------- MODIFICATION DE MARC-----------------------
-      dataModel.put("NbCount", databaseRequest.getCount());
-      
-      if(this.urls != null){
-        String primaryKeyName = databaseRequest.getPrimaryKeys().get(0);
-        dataModel.put("primaryKeyName", primaryKeyName);
-        dataModel.put("urls", this.urls); 
-      }
-      // On renseigne le champ query status à OK vu que tout c'est bien passé.
-      final List<Info> infos = new ArrayList<Info>();
-      List<Param> paramaQuery = new ArrayList<Param>();
-      setQueryOk(infos);
-      setQueryParams(paramaQuery);
-      dataModel.put("infos", infos);
-      dataModel.put("paramaQuery",paramaQuery);
-      //------------  FIN MODIFICATION ----------------------
 
       datasetApp.getLogger().log(Level.FINEST, "DB request: {0}", databaseRequest.getRequestAsString());
-
+      
+      // Get primaryKey and put in the dataModel
+      primaryKeyName = databaseRequest.getPrimaryKeys().get(0);
+      dataModel.put("primaryKey",databaseRequest.getPrimaryKeys().get(0));
+      
       // complete data model with fields
       setFields(fieldList, columnList, mappingList);
-     
       dataModel.put("fields", fieldList);
-      
       dataModel.put("sqlColAlias", columnList);
+      Map conceptColAlias = new HashMap();
+       for (ColumnConceptMappingDTO map:mappingList) {
+          conceptColAlias.put(map.getColumnAlias(), map.getConcept().getPropertyFromName("ucd").getValue());
+      }
+      dataModel.put("mappingColAliasConceptSql", conceptColAlias);
+      
+      //complete data model with boolean siaCut.
+      dataModel.put("siaCut", this.siaCut);
+      if(this.siaCut){
+        //Create the map of cut file
+        Map mapPartFileCutUrl = createFileCutUrl(primaryKeyName);
+        // complete dataModel with it.
+        dataModel.put("fileCutUrl", mapPartFileCutUrl);
+      }
+      
+      
       // Complete data model with data
-      final int count = (databaseRequest.getCount() > dbParams.getPaginationExtend()) ? dbParams.getPaginationExtend() : databaseRequest.getCount();     
+      final int count = (databaseRequest.getCount() > dbParams.getPaginationExtend()) ? dbParams.getPaginationExtend() : databaseRequest.getCount();
+      dataModel.put("nrows", count);
       final ConverterChained converterChained = datasetApp.getConverterChained();
       final TemplateSequenceModel rows = new DatabaseRequestModel(databaseRequest, converterChained);
       ((DatabaseRequestModel) rows).setSize(count);
-      
       dataModel.put("rows", rows);
-      
-      
+
     } catch (SitoolsException ex) {
       try {
         if (Util.isSet(databaseRequest)) {
-            
           databaseRequest.close();
         }
-        
       } catch (SitoolsException ex1) {
           LOG.log(Level.FINER, null, ex1);
       } finally {
@@ -353,7 +381,6 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
     for (DictionaryMappingDTO dicoMappingIter : dicoMappingList) {
       final String dicoName = dicoMappingIter.getDictionaryName();
       if (dicoToFind.equals(dicoName)) {
-          
         colConceptMappingDTOList = dicoMappingIter.getMapping();
         break;
       }
@@ -387,78 +414,65 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
       String descriptionValue = null;
       columnList.add(mappingIter.getColumnAlias());
       final Concept concept = mappingIter.getConcept();
-      if (!concept.getName().equalsIgnoreCase("Table_ID")) {
-          if (concept.getName() != null) {
-              name = concept.getName();
-          }
-          if (concept.getPropertyFromName("ID").getValue() != null) {
-              id = concept.getPropertyFromName("ID").getValue();
-          }
-          if (concept.getPropertyFromName("ucd").getValue() != null) {
-              ucd = concept.getPropertyFromName("ucd").getValue();
-          }
-          if (concept.getPropertyFromName("utype").getValue() != null) {
-              utype = concept.getPropertyFromName("utype").getValue();
-          }
-          if (concept.getPropertyFromName("ref").getValue() != null) {
-              ref = concept.getPropertyFromName("ref").getValue();
-          }
-          if (concept.getPropertyFromName("datatype").getValue() != null) {
-              datatype = concept.getPropertyFromName("datatype").getValue();
-          }
-          if (concept.getPropertyFromName("width").getValue() != null) {
-             width = concept.getPropertyFromName("width").getValue();
-          }
-          if (concept.getPropertyFromName("precision").getValue() != null) {
-              precision = concept.getPropertyFromName("precision").getValue();
-          }
-          if (concept.getPropertyFromName("unit").getValue() != null) {
-              unit = concept.getPropertyFromName("unit").getValue();
-          }
-          if (concept.getPropertyFromName("type").getValue() != null) {
-             type = concept.getPropertyFromName("type").getValue();
-          }
-          if (concept.getPropertyFromName("xtype").getValue() != null) {
-             xtype = concept.getPropertyFromName("xtype").getValue();
-          }
-          if (concept.getPropertyFromName("arraysize").getValue() != null) {
-              arraysize = concept.getPropertyFromName("arraysize").getValue();
-          }
-          if (concept.getDescription() != null) {
-              descriptionValue = concept.getDescription();
-          }
-          
-          final Field field = new Field();
-          field.setID(id);
-          field.setName(name);
-          field.setUcd(ucd);
-          field.setUtype(utype);
-          //field.setRef(ref);
-          field.setDatatype(DataType.fromValue(datatype));
-          if (width != null) {
-            field.setWidth(BigInteger.valueOf(Long.valueOf(width)));
-          }
-          field.setPrecision(precision);
-          field.setUnit(unit);
-          field.setType(type);
-          field.setXtype(xtype);
-          field.setArraysize(arraysize);
-          final AnyTEXT anyText = new AnyTEXT();
-          anyText.getContent().add(descriptionValue);
-          field.setDESCRIPTION(anyText);
-          fieldList.add(field);
-       } else if(concept.getName().equalsIgnoreCase("Table_ID") && this.serviceName.equalsIgnoreCase(SimpleImageAccessProtocolLibrary.ImageService.IMAGE_CUTOUT_SERVICE.getServiceName())){
-           final Field field = new Field();
-           field.setName("AccessRef");
-           field.setUcd("VOX:Image_AccessReference");
-           field.setDatatype(DataType.CHAR);
-           field.setArraysize("*");
-           final AnyTEXT anyText = new AnyTEXT();
-           anyText.getContent().add("URL to be used to access or retrieve the image");
-           field.setDESCRIPTION(anyText);
-           fieldList.add(field);
-          }
+      if (concept.getName() != null) {
+        name = concept.getName();
       }
+      if (concept.getPropertyFromName("ID").getValue() != null) {
+        id = concept.getPropertyFromName("ID").getValue();
+      }
+      if (concept.getPropertyFromName("ucd").getValue() != null) {
+        ucd = concept.getPropertyFromName("ucd").getValue();
+      }
+      if (concept.getPropertyFromName("utype").getValue() != null) {
+        utype = concept.getPropertyFromName("utype").getValue();
+      }
+      if (concept.getPropertyFromName("ref").getValue() != null) {
+        ref = concept.getPropertyFromName("ref").getValue();
+      }
+      if (concept.getPropertyFromName("datatype").getValue() != null) {
+        datatype = concept.getPropertyFromName("datatype").getValue();
+      }
+      if (concept.getPropertyFromName("width").getValue() != null) {
+        width = concept.getPropertyFromName("width").getValue();
+      }
+      if (concept.getPropertyFromName("precision").getValue() != null) {
+        precision = concept.getPropertyFromName("precision").getValue();
+      }
+      if (concept.getPropertyFromName("unit").getValue() != null) {
+        unit = concept.getPropertyFromName("unit").getValue();
+      }
+      if (concept.getPropertyFromName("type").getValue() != null) {
+        type = concept.getPropertyFromName("type").getValue();
+      }
+      if (concept.getPropertyFromName("xtype").getValue() != null) {
+        xtype = concept.getPropertyFromName("xtype").getValue();
+      }
+      if (concept.getPropertyFromName("arraysize").getValue() != null) {
+        arraysize = concept.getPropertyFromName("arraysize").getValue();
+      }
+      if (concept.getDescription() != null) {
+        descriptionValue = concept.getDescription();
+      }
+      final Field field = new Field();
+      field.setID(id);
+      field.setName(name);
+      field.setUcd(ucd);
+      field.setUtype(utype);
+      field.setRef(ref);
+      field.setDatatype(DataType.fromValue(datatype));
+      if (width != null) {
+        field.setWidth(BigInteger.valueOf(Long.valueOf(width)));
+      }
+      field.setPrecision(precision);
+      field.setUnit(unit);
+      field.setType(type);
+      field.setXtype(xtype);
+      field.setArraysize(arraysize);
+      final AnyTEXT anyText = new AnyTEXT();
+      anyText.getContent().add(descriptionValue);
+      field.setDESCRIPTION(anyText);
+      fieldList.add(field);
+    }
   }
 
   /**
@@ -471,111 +485,44 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
    */
   private List<ColumnConceptMappingDTO> checkRequiredMapping(final List<ColumnConceptMappingDTO> mappingList, final int verb)
           throws SitoolsException {
-      final int nbConceptToMap;
-      if(this.serviceName.equalsIgnoreCase("Image Cutout Service")){
-        nbConceptToMap = SimpleImageAccessProtocolLibrary.REQUIRED_UCD_CONCEPTS_CUT_OUT.size();
-      }else{
-        nbConceptToMap = SimpleImageAccessProtocolLibrary.REQUIRED_UCD_CONCEPTS.size();
-      }
+    final int nbConceptToMap = SimpleImageAccessProtocolLibrary.REQUIRED_UCD_CONCEPTS.size();
     int nbConcept = 0;
     final List<ColumnConceptMappingDTO> conceptToMap = new ArrayList<ColumnConceptMappingDTO>(mappingList);
     for (ColumnConceptMappingDTO mappingIter : mappingList) {
       final Concept concept = mappingIter.getConcept();
       final String ucdValue = concept.getPropertyFromName("ucd").getValue();
-      
-      if(!this.serviceName.equalsIgnoreCase("Image Cutout Service")){
-        if (Util.isNotEmpty(ucdValue) && SimpleImageAccessProtocolLibrary.REQUIRED_UCD_CONCEPTS.contains(ucdValue)) {
-            nbConcept++;
-        } else if (verb == 1) {
-            conceptToMap.remove(mappingIter);
-        }
-       }else{
-          if (Util.isNotEmpty(ucdValue) && SimpleImageAccessProtocolLibrary.REQUIRED_UCD_CONCEPTS_CUT_OUT.contains(ucdValue)) {
-            nbConcept++;
-            
-        } else if (verb == 1) {
-            LOG.severe("--------------------------------------- JE SUIS DANS LE  else if (verb == 1) ");
-            conceptToMap.remove(mappingIter);
-        }else{
-            LOG.severe("--------------------------------------- JE SUIS DANS LE  else et  ucdValue : "+ucdValue);
-            
-        }
+      if (Util.isNotEmpty(ucdValue) && SimpleImageAccessProtocolLibrary.REQUIRED_UCD_CONCEPTS.contains(ucdValue)) {
+        nbConcept++;
+      } else if (verb == 1) {
+        conceptToMap.remove(mappingIter);
       }
     }
-    LOG.severe("--------------------------------------- nbConceptToMap : "+nbConceptToMap+"   ***************   nbConcept : "+nbConcept);
+
     if (nbConceptToMap != nbConcept) {
       final StringBuilder buffer = new StringBuilder("columns with ");
       for (ColumnConceptMappingDTO mappingIter : mappingList) {
-        LOG.info("---------*********************----------------- TEST : "+mappingIter.getColumnAlias());
         buffer.append(mappingIter.getConcept().getName()).append(" ");
       }
       buffer.append("must be mapped");
       throw new SitoolsException(buffer.toString());
     }
-    /*   CODE ORIGINAL
-    if (nbConceptToMap != nbConcept) {
-      final StringBuilder buffer = new StringBuilder("columns with ");
-      for (ColumnConceptMappingDTO mappingIter : mappingList) {
-          LOG.severe("--------------------------------------- mappingIter.getConcept().getName() : "+mappingIter.getConcept().getName());
-        buffer.append(mappingIter.getConcept().getName()).append(" ");
-      }
-      buffer.append("must be mapped");
-      throw new SitoolsException(buffer.toString());
-    }
-    */
-    
+
     return conceptToMap;
 
   }
-  
   /**
-   * Set the Infos parameters to the VoTable
-   * @param listInfos List of Infos
+   * Create the template of the url of cut file in a hashMap with 3 parts.
+   * @param primaryKeyName
+   * @return HashMap of the url of cut file
    */
-  private void setQueryOk(List<Info> listInfos){
-      final Info info = new Info();
-      info.setName("QUERY_STATUS");
-      info.setValueAttribute("OK");
-      listInfos.add(info);
-  }
-  
-  /**
-   * Set the Query parameters to the VoTable
-   * @param listParams List of parameters
-   */
-  private void setQueryParams(List<Param> listParams){
-      try{
-        String sizeInput = "";
-        String posInput =  Double.toString(this.inputParameters.getRa())+","+Double.toString(this.inputParameters.getDec());
-        if(this.inputParameters.getSize().length <= 1){
-            sizeInput = Double.toString(this.inputParameters.getSize()[0]);
-        }else if(this.inputParameters.getSize().length > 1 && this.inputParameters.getSize().length <= 2){
-            sizeInput = Double.toString(this.inputParameters.getSize()[0])+","+Double.toString(this.inputParameters.getSize()[1]);;
-        }
-        String intersect = this.resourceModel.getParameterByName("INTERSECT").getValue();
-      
-        Param param = new Param();
-        param.setName("POS");
-        param.setDatatype(DataType.CHAR);
-        param.setValue(posInput);
-        param.setUnit("deg");
-        listParams.add(param);
-      
-        param = new Param();
-        param.setName("SIZE");
-        param.setDatatype(DataType.DOUBLE);
-        param.setValue(sizeInput);
-        param.setUnit("deg"); 
-        listParams.add(param);
-      
-        param = new Param();
-        param.setName("INTERSECT");
-        param.setDatatype(DataType.CHAR);
-        param.setValue(intersect);
-        listParams.add(param);
-      }catch(Exception e ){
-          LOG.severe(e.getMessage());
-      }
-      
+  private Map createFileCutUrl(String primaryKeyName){
+      Map mapPartFileCutUrl = new HashMap();
+      String mapPartFileCutUrl1 = this.urlServicesCutOut+primaryKeyName+"%7C";
+      String mapPartFileCutUrl2 = "&amp;fileName=";
+      String mapPartFileCutUrl3 = "&amp;RA="+this.ra+"&amp;DEC="+this.dec+"&amp;Radius="+this.sizesCut+"&amp;OutputFormat=FITS";
+      mapPartFileCutUrl.put("1", mapPartFileCutUrl1);
+      mapPartFileCutUrl.put("2", mapPartFileCutUrl2);
+      mapPartFileCutUrl.put("3", mapPartFileCutUrl3);
+      return mapPartFileCutUrl;
   }
 }

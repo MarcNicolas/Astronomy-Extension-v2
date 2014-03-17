@@ -21,9 +21,7 @@ package fr.cnes.sitools.extensions.astro.resource;
 import fr.cnes.sitools.astro.vo.sia.SimpleImageAccessProtocolLibrary;
 import fr.cnes.sitools.common.resource.SitoolsParameterizedResource;
 import fr.cnes.sitools.dataset.DataSetApplication;
-import fr.ias.sitools.ias.vo.cutOut.CutOutVoResource;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 import org.restlet.data.Disposition;
@@ -37,8 +35,6 @@ import org.restlet.ext.wadl.RepresentationInfo;
 import org.restlet.representation.Representation;
 import org.restlet.representation.Variant;
 import org.restlet.resource.Get;
-
-import fr.ias.sitools.server.Constante.Const;
 
 /**
  * Queries the dataset and retrieves the result using the Simple Image Access Protocol.
@@ -60,12 +56,7 @@ public class SimpleImageAccessResource extends SitoolsParameterizedResource {
   public final void doInit() {
     super.doInit();
   }
-  
-  /**
-   * 
-   */
-  private final transient String urlHostDomain = getSitoolsSetting(Const.APP_HOST_DOMAIN);
-  
+
   /**
    * Returns the supported representation.
    *
@@ -86,39 +77,14 @@ public class SimpleImageAccessResource extends SitoolsParameterizedResource {
    */
   @Get
   public final Representation getVOResponse() {
-    Representation rep = null;
     LOG.finest(String.format("SIA : %s", getRequest()));
-    //TEST MARC
-    String serviceName = this.getModel().getParameterByName("Image service").getValue();
-    if(serviceName.equalsIgnoreCase(SimpleImageAccessProtocolLibrary.ImageService.IMAGE_CUTOUT_SERVICE.getServiceName())){
-        // APPEL DE LA CLASSE CUTOUTVORESOURCE POUR CRRER LES URL DES FITS COUPES A INJECTER DANS LA VOTABLE
-        CutOutVoResource cut = new CutOutVoResource(this.getRequest(), this.getContext(),(DataSetApplication) this.getApplication(), this.getModel());
-        HashMap<String,String> urlCutFitsFiles = cut.execute();
-
-        // APPEL DU SIAP POUR CREER LA REPONSE VOTABLE
-        final SimpleImageAccessProtocolLibrary sia = new SimpleImageAccessProtocolLibrary((DataSetApplication) this.getApplication(),
-            this.getModel(), this.getRequest(), this.getContext(),urlCutFitsFiles);
-        rep = sia.getResponse();
-        if (fileName != null && !"".equals(fileName)) {
-            final Disposition disp = new Disposition(Disposition.TYPE_ATTACHMENT);
-            disp.setFilename(fileName);
-            rep.setDisposition(disp);
-        }
-        return rep;
-    }else if(serviceName.equalsIgnoreCase(SimpleImageAccessProtocolLibrary.ImageService.POINTED_IMAGE_ARCHIVE.getServiceName())){
-        final SimpleImageAccessProtocolLibrary sia = new SimpleImageAccessProtocolLibrary((DataSetApplication) this.getApplication(),
+    final SimpleImageAccessProtocolLibrary sia = new SimpleImageAccessProtocolLibrary((DataSetApplication) this.getApplication(),
             this.getModel(), this.getRequest(), this.getContext());
-        //final Representation rep = sia.getResponse();
-        rep = sia.getResponse();
-        if (fileName != null && !"".equals(fileName)) {
-            final Disposition disp = new Disposition(Disposition.TYPE_ATTACHMENT);
-            disp.setFilename(fileName);
-            rep.setDisposition(disp);
-        }
-        return rep;
-    }else{
-        // VOIR LE CODE A METTRE EN CAS DE SERVICE QUI N'EST NI NU POINTED NI UN CUTOUT
-        LOG.warning("**********    ON EST DANS LE ELSE DU SERVICE NAME");
+    final Representation rep = sia.getResponse();
+    if (fileName != null && !"".equals(fileName)) {
+      final Disposition disp = new Disposition(Disposition.TYPE_ATTACHMENT);
+      disp.setFilename(fileName);
+      rep.setDisposition(disp);
     }
     return rep;
   }
