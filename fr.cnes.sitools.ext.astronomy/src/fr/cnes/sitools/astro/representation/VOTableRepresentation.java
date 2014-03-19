@@ -93,6 +93,8 @@ import org.restlet.resource.ClientResource;
  *    |__ nrows (optional)
  *    |__ mapPartFileCutUrl (Hash) (optional)
  *    |__ primaryKey (optional)
+ *    |__ queryParams (POS,SIZE,...)
+ *    |__ queryInfos (Query status)
  *
  * </pre> Provide a VOTable representation by streaming based on Freemarker To have a dataModel by streaming, dataModel for rows element
  * must use the DatabaseRequestModel adapter

@@ -1,8 +1,14 @@
 <?xml version="1.0" ?>
 <VOTABLE version="1.2" xmlns="http://www.ivoa.net/xml/VOTable/v1.2">
-    
+    <PARAM name="SORTORDER" value="InstID Filter_Name" datatype="char" arraysize="*" />
     <RESOURCE type="results">        
         <#if description?exists><DESCRIPTION>${description}</DESCRIPTION></#if>                
+        <#list queryInfos as queryInfo>
+            <INFO<#if queryInfo.id?exists> ID="${queryInfo.id}"</#if> name="${queryInfo.name}" value="${queryInfo.valueAttribute}"<#if queryInfo.xtype?exists> xtype="${queryInfo.xtype}"</#if><#if queryInfo.unit?exists> unit="${queryInfo.unit}"</#if><#if queryInfo.ucd?exists> ucd="${queryInfo.ucd}"</#if><#if queryInfo.utype?exists> utype="${queryInfo.utype}"</#if> />
+        </#list>
+        <#list queryParams as queryParam>
+            <PARAM<#if queryParam.id?exists> ID="${queryParam.id}"</#if> name="${queryParam.name}" datatype="${queryParam.datatype.value()}" <#if queryParam.xtype?exists> xtype="${queryParam.xtype}"</#if><#if queryParam.unit?exists> unit="${queryParam.unit}"</#if><#if queryParam.ucd?exists> ucd="${queryParam.ucd}"</#if><#if queryParam.utype?exists> utype="${queryParam.utype}"</#if> value="${queryParam.value}"/>
+        </#list>
         <#if infos?exists>
           <#list infos as info>
             <INFO<#if info.id?exists> ID="${info.id}"</#if> name="${info.name}" value="${info.valueAttribute}"<#if info.xtype?exists> xtype="${info.xtype}"</#if><#if info.ref?exists> ref="${info.ref}"</#if><#if info.unit?exists> unit="${info.unit}"</#if><#if info.ucd?exists> ucd="${info.ucd}"</#if><#if info.utype?exists> utype="${info.utype}"</#if> />
@@ -11,7 +17,7 @@
         <#if params?exists>
           <#list params as param>
             <#if param.DESCRIPTION?exists>
-              <PARAM<#if param.id?exists> ID="${param.id}"</#if><#if param.unit?exists> unit="${param.unit}"</#if> datatype="${param.datatype.value()}"<#if param.precision?exists> precision="${param.precision}"</#if><#if param.width?exists> ID="${param.width}"</#if><#if param.xtype?exists> xtype="${param.xtype}"</#if><#if param.ref?exists> ref="${param.ref}"</#if> name="${param.name}"<#if param.ucd?exists> ucd="${param.ucd}"</#if><#if param.utype?exists> utype="${param.utype}"</#if><#if param.arraysize?exists> arraysize="${param.arraysize}"</#if> value="${param.value}">
+              <PARAM<#if param.id?exists> ID="${param.id}"</#if> name="${param.name}" <#if param.unit?exists> unit="${param.unit}"</#if> datatype="${param.datatype.value()}"<#if param.precision?exists> precision="${param.precision}"</#if><#if param.width?exists> ID="${param.width}"</#if><#if param.xtype?exists> xtype="${param.xtype}"</#if><#if param.ref?exists> ref="${param.ref}"</#if><#if param.ucd?exists> ucd="${param.ucd}"</#if><#if param.utype?exists> utype="${param.utype}"</#if><#if param.arraysize?exists> arraysize="${param.arraysize}"</#if> value="${param.value}">
               <DESCRIPTION>
               <#list param.DESCRIPTION.content as description>
                 ${description}

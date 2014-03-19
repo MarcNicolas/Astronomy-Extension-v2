@@ -48,7 +48,9 @@ import net.ivoa.xml.votable.v1.AnyTEXT;
 import net.ivoa.xml.votable.v1.DataType;
 import net.ivoa.xml.votable.v1.Field;
 import net.ivoa.xml.votable.v1.Info;
+import net.ivoa.xml.votable.v1.Option;
 import net.ivoa.xml.votable.v1.Param;
+import net.ivoa.xml.votable.v1.Values;
 
 
 /**
@@ -218,12 +220,14 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
       // Get query parameters
       final DatabaseRequestParameters dbParams = setQueryParameters(datasetApp, model, inputParameters, mappingList);
       databaseRequest = DatabaseRequestFactory.getDatabaseRequest(dbParams);
-
+      
       // Execute query
       databaseRequest.createRequest();
 
       datasetApp.getLogger().log(Level.FINEST, "DB request: {0}", databaseRequest.getRequestAsString());
       
+      //Fill the template with query status and param
+      fillInfosParamAboutQuery(model);
       // Get primaryKey and put in the dataModel
       primaryKeyName = databaseRequest.getPrimaryKeys().get(0);
       dataModel.put("primaryKey",databaseRequest.getPrimaryKeys().get(0));
@@ -524,5 +528,51 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
       mapPartFileCutUrl.put("2", mapPartFileCutUrl2);
       mapPartFileCutUrl.put("3", mapPartFileCutUrl3);
       return mapPartFileCutUrl;
+  }
+  
+  private void fillInfosParamAboutQuery(final ResourceModel model){
+    final List<Info> listQueryInfos = new ArrayList<Info>();
+    
+    final Info info = new Info();
+    info.setName("QUERY_STATUS");
+    info.setValueAttribute("OK");
+    listQueryInfos.add(info);
+    this.dataModel.put("queryInfos", listQueryInfos);
+   
+    final List<Param> listQueryParam = new ArrayList<Param>();
+    Param param = new Param();
+    param.setName("POS");
+    param.setValue(this.ra+","+this.dec);
+    param.setUnit("deg");
+    param.setDatatype(DataType.DOUBLE);
+    listQueryParam.add(param);
+
+    param = new Param();
+    param.setName("SIZE");
+    param.setValue(this.sizesCut);
+    param.setUnit("deg");
+    param.setDatatype(DataType.DOUBLE);
+    listQueryParam.add(param);
+
+    param = new Param();
+    param.setName("FORMAT");
+    param.setValue(SimpleImageAccessProtocolLibrary.ParamStandardFormat.ALL.name().toLowerCase());
+    param.setDatatype(DataType.CHAR);
+    param.setArraysize("*");
+    listQueryParam.add(param);
+    
+    param = new Param();
+    param.setName("INTERSECT");
+    param.setValue(model.getParameterByName(SimpleImageAccessProtocolLibrary.INTERSECT).getValue());
+    param.setDatatype(DataType.CHAR);
+    listQueryParam.add(param);
+
+    param = new Param();
+    param.setName("VERB");
+    param.setValue(model.getParameterByName(SimpleImageAccessProtocolLibrary.VERB).getValue());
+    param.setDatatype(DataType.INT);
+    listQueryParam.add(param);
+    
+     dataModel.put("queryParams", listQueryParam);
   }
 }
