@@ -53,11 +53,11 @@ public class CorotIdResolver extends AbstractNameResolver {
   /**
    * Template URL for the Corot identifier resolver service.
    */
-  private static final String TEMPLATE_NAME_RESOLVER = "http://idoc-corotn2-public-v2.ias.u-psud.fr/exo_dset/records?en2_windescriptor%22&nocount=false&start=0&limit=1"
+  private static final String TEMPLATE_NAME_RESOLVER = "http://idoc-corotn2-public-v2.ias.u-psud.fr/ds/exo/plugin/corotIdResolver/EQUATORIAL/<corotid>";/*"http://idoc-corotn2-public-v2.ias.u-psud.fr/exo_dset/records?en2_windescriptor%22&nocount=false&start=0&limit=1"
           + "&filter[0][columnAlias]=corotid&filter[0][data][type]=numeric"
           + "&filter[0][data][comparison]=eq&filter[0][data][value]=<corotid>"
           + "&filter[1][columnAlias]=en2_windescriptor&filter[1][data][type]=boolean"
-          + "&filter[1][data][comparison]=eq&filter[1][data][value]=false&media=json";
+          + "&filter[1][data][comparison]=eq&filter[1][data][value]=false&media=json";*/
   /**
    * Corot service response.
    */
@@ -110,11 +110,11 @@ public class CorotIdResolver extends AbstractNameResolver {
     NameResolverResponse response = new NameResolverResponse(CREDITS_NAME);
     try {
       final String query = TEMPLATE_NAME_RESOLVER.replace("<corotid>", corotId);
-      LOG.log(Level.INFO, "{0} found from Corot service", getCorotId());
       final JSONObject json = parseResponse(query);
       final String[] coordinates = parseCoordinates(json);
       final double rightAscension = Double.valueOf(coordinates[0]);
       final double declination = Double.valueOf(coordinates[1]);
+      
       response.addAstroCoordinate(rightAscension, declination);
     } catch (NameResolverException ex) {
       if (getSuccessor() == null) {
@@ -139,7 +139,7 @@ public class CorotIdResolver extends AbstractNameResolver {
     LOG.log(Level.INFO, "Call IAS name resolver: {0}", query);
     final ClientResourceProxy proxy = new ClientResourceProxy(query, Method.GET);
     final ClientResource client = proxy.getClientResource();
-    client.setChallengeResponse(new ChallengeResponse(ChallengeScheme.HTTP_BASIC, "guest", "sitools2public"));
+    //client.setChallengeResponse(new ChallengeResponse(ChallengeScheme.HTTP_BASIC, "guest", "sitools2public"));
     final Client clientHTTP = new Client(Protocol.HTTP);
     clientHTTP.setConnectTimeout(AbstractNameResolver.SERVER_TIMEOUT);
     client.setNext(clientHTTP);
@@ -170,17 +170,22 @@ public class CorotIdResolver extends AbstractNameResolver {
    */
   private String[] parseCoordinates(final JSONObject json) throws NameResolverException {
     try {
-      final JSONArray jsonArray = json.getJSONArray("data");
+      //final JSONArray jsonArray = json.getJSONArray("data");
+      final JSONArray jsonArray = json.getJSONArray("features");
+      final JSONArray coords  = jsonArray.getJSONObject(0).getJSONObject("geometry").getJSONArray("coordinates");
+      
       if (jsonArray.length() != 1) {
         throw new NameResolverException(Status.CLIENT_ERROR_NOT_FOUND, "Not found");
       }
-      final JSONObject record = jsonArray.getJSONObject(0);
+      /*final JSONObject record = jsonArray.getJSONObject(0);
       if (!record.has("alpha_from") || !record.has("delta_from")) {
         throw new NameResolverException(Status.CLIENT_ERROR_NOT_FOUND, "Not found");
       }
       final String rightAscension = record.getString("alpha_from");
       final String declination = record.getString("delta_from");
       return new String[]{rightAscension, declination};
+      */
+      return new String[]{coords.get(0).toString(),coords.get(1).toString()};
     } catch (JSONException ex) {
       throw new NameResolverException(Status.SERVER_ERROR_INTERNAL, "cannot parse the coordinates");
     }

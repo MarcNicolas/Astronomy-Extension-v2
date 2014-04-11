@@ -34,7 +34,7 @@
               </#if>
             </PARAM>
             <#else>
-            <PARAM<#if param.id?exists> ID="${param.id}"</#if><#if param.unit?exists> unit="${param.unit}"</#if> datatype="${param.datatype.value()}"<#if param.precision?exists> precision="${param.precision}"</#if><#if param.width?exists> ID="${param.width}"</#if><#if param.xtype?exists> xtype="${param.xtype}"</#if><#if param.ref?exists> ref="${param.ref}"</#if> name="${param.name}"<#if param.ucd?exists> ucd="${param.ucd}"</#if><#if param.utype?exists> utype="${param.utype}"</#if><#if param.arraysize?exists> arraysize="${param.arraysize}"</#if> value="${param.value}"/>
+            <PARAM<#if param.id?exists> ID="${param.id}"</#if> name="${param.name}" <#if param.unit?exists> unit="${param.unit}"</#if> datatype="${param.datatype.value()}"<#if param.precision?exists> precision="${param.precision}"</#if><#if param.width?exists> ID="${param.width}"</#if><#if param.xtype?exists> xtype="${param.xtype}"</#if><#if param.ref?exists> ref="${param.ref}"</#if><#if param.ucd?exists> ucd="${param.ucd}"</#if><#if param.utype?exists> utype="${param.utype}"</#if><#if param.arraysize?exists> arraysize="${param.arraysize}"</#if> value="${param.value}"/>
             </#if>
           </#list>
         </#if>

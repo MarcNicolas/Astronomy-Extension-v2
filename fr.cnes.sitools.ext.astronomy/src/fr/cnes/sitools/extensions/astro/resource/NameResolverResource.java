@@ -36,6 +36,8 @@ import fr.cnes.sitools.extensions.common.InputsValidation;
 import fr.cnes.sitools.extensions.common.NotNullAndNotEmptyValidation;
 import fr.cnes.sitools.extensions.common.StatusValidation;
 import fr.cnes.sitools.extensions.common.Validation;
+import fr.ias.sitools.astro.resolverName.CorotIdResolverResource;
+import fr.ias.sitools.astro.resolverName.resource.CorotIdResolverAstero;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -214,9 +216,11 @@ public class NameResolverResource extends SitoolsParameterizedResource {
      * @return the representation
      */
     private Representation resolveIAS() {
-        final AbstractNameResolver ias = new CorotIdResolver(objectName);
-        final NameResolverResponse response = ias.getResponse();
-        if (response.hasResult()) {
+        //final AbstractNameResolver ias = new CorotIdResolver(objectName);
+        CorotIdResolverResource corot = new CorotIdResolverResource();
+        Representation a = corot.getCorotIdResolver();
+        //final NameResolverResponse response = ias.getResponse();
+        /*if (response.hasResult()) {
             LOG.log(Level.INFO, "Corot name resolver is selected for {0}", objectName);
             getResponse().setStatus(Status.SUCCESS_OK);
             final List<AstroCoordinate> coordinates = response.getAstroCoordinates();
@@ -229,11 +233,42 @@ public class NameResolverResource extends SitoolsParameterizedResource {
             final CacheBrowser cache = CacheBrowser.createCache(CacheBrowser.CacheDirectiveBrowser.FOREVER, rep);
             rep = cache.getRepresentation();
             getResponse().setCacheDirectives(cache.getCacheDirectives());
-            return rep;
-        } else {
+          */  return a;
+        /*} else {
             LOG.log(Level.WARNING, null, response.getError());
             throw new ResourceException(response.getError().getStatus(), response.getError().getMessage());
-        }
+        }*/
+    }
+    
+    
+    /**
+     * Returns the representation based on IAS response.
+     *
+     * @return the representation
+     */
+    private Representation resolveIASAstero() {
+        //final AbstractNameResolver ias = new CorotIdResolver(objectName);
+        CorotIdResolverResource corot = new CorotIdResolverResource();
+        Representation a = corot.getCorotIdResolver();
+        //final NameResolverResponse response = ias.getResponse();
+        //if (response.hasResult()) {
+        //    LOG.log(Level.INFO, "Corot name resolver is selected for {0}", objectName);
+        //    getResponse().setStatus(Status.SUCCESS_OK);
+        //   final List<AstroCoordinate> coordinates = response.getAstroCoordinates();
+        //    for (AstroCoordinate iter : coordinates) {
+        //        iter.processTo(coordSystem);
+        //    }
+        //    final String credits = response.getCredits();
+        //    final Map dataModel = getDataModel(credits, coordinates, this.coordSystem.name());
+        //    Representation rep = new GeoJsonRepresentation(dataModel);
+        //    final CacheBrowser cache = CacheBrowser.createCache(CacheBrowser.CacheDirectiveBrowser.FOREVER, rep);
+        //    rep = cache.getRepresentation();
+         //   getResponse().setCacheDirectives(cache.getCacheDirectives());
+           return a;
+        //} else {
+         //   LOG.log(Level.WARNING, null, response.getError());
+          //  throw new ResourceException(response.getError().getStatus(), response.getError().getMessage());
+        //}
     }
 
     /**
@@ -276,9 +311,13 @@ public class NameResolverResource extends SitoolsParameterizedResource {
         final AbstractNameResolver imcce = new IMCCESsoResolver(objectName, "now");
         final AbstractNameResolver corot = new CorotIdResolver(objectName);
         final AbstractNameResolver sitools2 = new ConstellationNameResolver(objectName);
-        cds.setNext(sitools2);
+        final AbstractNameResolver corotAstero = new CorotIdResolverAstero(objectName);
+        cds.setNext(corot);
+        corot.setNext(corotAstero);
+        corotAstero.setNext(sitools2);
         sitools2.setNext(imcce);
         imcce.setNext(corot);
+        
         final NameResolverResponse response = cds.getResponse();
         if (!response.hasResult()) {
             throw new ResourceException(response.getError().getStatus(), response.getError().getMessage());
@@ -307,14 +346,17 @@ public class NameResolverResource extends SitoolsParameterizedResource {
     @Get
     public final Representation getNameResolverResponse() {
         Representation rep = null;
-
+        LOG.log(Level.SEVERE, "******************************** this.resolverName : "+this.nameResolver);
         if (this.nameResolver.equals("CDS")) {
             rep = resolveCds();
         } else if (this.nameResolver.equals("IMCCE")) {
             rep = resolveIMCCE();
         } else if (this.nameResolver.equals("IAS")) {
             rep = resolveIAS();
-        } else if (this.nameResolver.equals("SITools2")) {
+        } else if (this.nameResolver.equals("IAS2")) {
+            rep = resolveIASAstero();
+        }
+        else if (this.nameResolver.equals("SITools2")) {
             rep = resolveConstellation();
         } else if (this.nameResolver.equals("ALL")) {
             rep = callChainedResolver();
@@ -405,6 +447,10 @@ public class NameResolverResource extends SitoolsParameterizedResource {
         final OptionInfo optionIAS = new OptionInfo("The IAS name resolver for Corot");
         optionIAS.setValue("IAS");
         nameResolverOption.add(optionIAS);
+        nameResolverParam.setOptions(nameResolverOption);
+        final OptionInfo optionIASAstero = new OptionInfo("The IAS Astero name resolver for Corot");
+        optionIAS.setValue("IAS2");
+        nameResolverOption.add(optionIASAstero);
         nameResolverParam.setOptions(nameResolverOption);
         final OptionInfo optionIMCCE = new OptionInfo("The IMCEE name resolver for solar system bodies");
         optionIMCCE.setValue("IMCCE");

@@ -184,7 +184,8 @@ public class CutOutSITools2 implements CutOutInterface {
      * @throws CutOutException When a problem happens
      */
     public CutOutSITools2(final Fits fitsObj, final double rightAscension, final double declination, final double radius, final int hduImageNumber, final int deepLevel) throws CutOutException  {
-        this(fitsObj, rightAscension, declination, radius * 2d, radius * 2d, hduImageNumber, deepLevel);
+        this(fitsObj, rightAscension, declination, radius , radius, hduImageNumber, deepLevel);
+        //this(fitsObj, rightAscension, declination, radius * 2d, radius * 2d, hduImageNumber, deepLevel);
     }
 
     /**
