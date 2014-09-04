@@ -73,6 +73,7 @@ public class NotNullAndNotEmptyValidation extends ValidationDecorator {
     public NotNullAndNotEmptyValidation(final Validation validation, final String keyword) {
         this(validation);
         if (keyword == null || keyword.isEmpty()) {
+            
             throw new IllegalArgumentException("keyword cannot be null or empty");
         }
         this.keywordToTest = keyword;

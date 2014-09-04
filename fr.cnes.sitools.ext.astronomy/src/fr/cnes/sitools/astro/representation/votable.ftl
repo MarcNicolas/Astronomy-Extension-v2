@@ -2,13 +2,17 @@
 <VOTABLE version="1.2" xmlns="http://www.ivoa.net/xml/VOTable/v1.2">
     <PARAM name="SORTORDER" value="InstID Filter_Name" datatype="char" arraysize="*" />
     <RESOURCE type="results">        
-        <#if description?exists><DESCRIPTION>${description}</DESCRIPTION></#if>                
-        <#list queryInfos as queryInfo>
-            <INFO<#if queryInfo.id?exists> ID="${queryInfo.id}"</#if> name="${queryInfo.name}" value="${queryInfo.valueAttribute}"<#if queryInfo.xtype?exists> xtype="${queryInfo.xtype}"</#if><#if queryInfo.unit?exists> unit="${queryInfo.unit}"</#if><#if queryInfo.ucd?exists> ucd="${queryInfo.ucd}"</#if><#if queryInfo.utype?exists> utype="${queryInfo.utype}"</#if> />
-        </#list>
-        <#list queryParams as queryParam>
-            <PARAM<#if queryParam.id?exists> ID="${queryParam.id}"</#if> name="${queryParam.name}" datatype="${queryParam.datatype.value()}" <#if queryParam.xtype?exists> xtype="${queryParam.xtype}"</#if><#if queryParam.unit?exists> unit="${queryParam.unit}"</#if><#if queryParam.ucd?exists> ucd="${queryParam.ucd}"</#if><#if queryParam.utype?exists> utype="${queryParam.utype}"</#if> value="${queryParam.value}"/>
-        </#list>
+        <#if description?exists><DESCRIPTION>${description}</DESCRIPTION></#if>
+        <#if queryInfos?exists>
+            <#list queryInfos as queryInfo>
+                <INFO<#if queryInfo.id?exists> ID="${queryInfo.id}"</#if> name="${queryInfo.name}" value="${queryInfo.valueAttribute}"<#if queryInfo.xtype?exists> xtype="${queryInfo.xtype}"</#if><#if queryInfo.unit?exists> unit="${queryInfo.unit}"</#if><#if queryInfo.ucd?exists> ucd="${queryInfo.ucd}"</#if><#if queryInfo.utype?exists> utype="${queryInfo.utype}"</#if> />
+            </#list>
+        </#if>
+        <#if queryParams?exists>
+            <#list queryParams as queryParam>
+                <PARAM<#if queryParam.id?exists> ID="${queryParam.id}"</#if> name="${queryParam.name}" datatype="${queryParam.datatype.value()}" <#if queryParam.xtype?exists> xtype="${queryParam.xtype}"</#if><#if queryParam.unit?exists> unit="${queryParam.unit}"</#if><#if queryParam.ucd?exists> ucd="${queryParam.ucd}"</#if><#if queryParam.utype?exists> utype="${queryParam.utype}"</#if> value="${queryParam.value}"/>
+            </#list>
+        </#if>
         <#if infos?exists>
           <#list infos as info>
             <INFO<#if info.id?exists> ID="${info.id}"</#if> name="${info.name}" value="${info.valueAttribute}"<#if info.xtype?exists> xtype="${info.xtype}"</#if><#if info.ref?exists> ref="${info.ref}"</#if><#if info.unit?exists> unit="${info.unit}"</#if><#if info.ucd?exists> ucd="${info.ucd}"</#if><#if info.utype?exists> utype="${info.utype}"</#if> />

@@ -48,9 +48,8 @@ import net.ivoa.xml.votable.v1.AnyTEXT;
 import net.ivoa.xml.votable.v1.DataType;
 import net.ivoa.xml.votable.v1.Field;
 import net.ivoa.xml.votable.v1.Info;
-import net.ivoa.xml.votable.v1.Option;
 import net.ivoa.xml.votable.v1.Param;
-import net.ivoa.xml.votable.v1.Values;
+
 
 
 /**
@@ -170,7 +169,8 @@ public class SimpleImageAccessResponse implements SimpleImageAccessDataModelInte
     setVotableParam(params, model, SimpleImageAccessProtocolLibrary.MAX_RECORDS, DataType.INT);
     setVotableParam(params, model, SimpleImageAccessProtocolLibrary.MAX_QUERY_SIZE, DataType.CHAR);
     setVotableParam(params, model, SimpleImageAccessProtocolLibrary.MAX_IMAGE_SIZE, DataType.CHAR);
-    setVotableParam(params, model, SimpleImageAccessProtocolLibrary.VERB, DataType.BOOLEAN);
+    setVotableParam(params, model, SimpleImageAccessProtocolLibrary.VERB, DataType.INT);
+/* POURQUOI BOOLEAN ?? Alors qu'il peut prendre 0,1,2 ou 3 comme valeurs    setVotableParam(params, model, SimpleImageAccessProtocolLibrary.VERB, DataType.BOOLEAN);*/
     if (Util.isSet(params)) {
       dataModel.put("params", params);
     }

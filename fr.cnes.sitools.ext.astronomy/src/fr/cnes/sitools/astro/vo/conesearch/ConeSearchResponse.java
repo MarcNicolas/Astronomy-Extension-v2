@@ -32,6 +32,7 @@ import fr.cnes.sitools.dataset.model.Predicat;
 import fr.cnes.sitools.dictionary.model.Concept;
 import fr.cnes.sitools.plugins.resources.model.ResourceModel;
 import fr.cnes.sitools.util.Util;
+import freemarker.template.TemplateModelException;
 import freemarker.template.TemplateSequenceModel;
 import java.math.BigInteger;
 import java.util.ArrayList;

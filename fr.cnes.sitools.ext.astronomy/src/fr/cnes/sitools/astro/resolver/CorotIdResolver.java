@@ -26,8 +26,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.restlet.Client;
-import org.restlet.data.ChallengeResponse;
-import org.restlet.data.ChallengeScheme;
 import org.restlet.data.Method;
 import org.restlet.data.Protocol;
 import org.restlet.data.Status;
@@ -49,7 +47,7 @@ public class CorotIdResolver extends AbstractNameResolver {
   /**
    * Credits to return for CDS.
    */
-  private static final String CREDITS_NAME = "IAS/CNES";
+  private static final String CREDITS_NAME = "IAS Exo/CNES";
   /**
    * Template URL for the Corot identifier resolver service.
    */

@@ -307,16 +307,18 @@ public class NameResolverResource extends SitoolsParameterizedResource {
      */
     private Representation callChainedResolver() {
         Map dataModel;
+        LOG.log(Level.INFO, "JE SUIS DANS LE CALLCHAINEDRESOLVER ET OBJ : "+objectName);
         final AbstractNameResolver cds = new CDSNameResolver(objectName, CDSNameResolver.NameResolverService.all);
-        final AbstractNameResolver imcce = new IMCCESsoResolver(objectName, "now");
+        //final AbstractNameResolver imcce = new IMCCESsoResolver(objectName, "now");
         final AbstractNameResolver corot = new CorotIdResolver(objectName);
         final AbstractNameResolver sitools2 = new ConstellationNameResolver(objectName);
         final AbstractNameResolver corotAstero = new CorotIdResolverAstero(objectName);
         cds.setNext(corot);
         corot.setNext(corotAstero);
         corotAstero.setNext(sitools2);
-        sitools2.setNext(imcce);
-        imcce.setNext(corot);
+        //cds.setNext(sitools2);
+        //sitools2.setNext(imcce);
+        //imcce.setNext(corot);
         
         final NameResolverResponse response = cds.getResponse();
         if (!response.hasResult()) {
@@ -346,14 +348,13 @@ public class NameResolverResource extends SitoolsParameterizedResource {
     @Get
     public final Representation getNameResolverResponse() {
         Representation rep = null;
-        LOG.log(Level.SEVERE, "******************************** this.resolverName : "+this.nameResolver);
         if (this.nameResolver.equals("CDS")) {
             rep = resolveCds();
         } else if (this.nameResolver.equals("IMCCE")) {
             rep = resolveIMCCE();
         } else if (this.nameResolver.equals("IAS")) {
             rep = resolveIAS();
-        } else if (this.nameResolver.equals("IAS2")) {
+        } else if (this.nameResolver.equals("IAS_Astero")) {
             rep = resolveIASAstero();
         }
         else if (this.nameResolver.equals("SITools2")) {
@@ -444,7 +445,7 @@ public class NameResolverResource extends SitoolsParameterizedResource {
         final OptionInfo optionCDS = new OptionInfo("The CDS name resolver based on SIMBAD and NED");
         optionCDS.setValue("CDS");
         nameResolverOption.add(optionCDS);
-        final OptionInfo optionIAS = new OptionInfo("The IAS name resolver for Corot");
+        final OptionInfo optionIAS = new OptionInfo("The IAS Exo name resolver for Corot");
         optionIAS.setValue("IAS");
         nameResolverOption.add(optionIAS);
         nameResolverParam.setOptions(nameResolverOption);

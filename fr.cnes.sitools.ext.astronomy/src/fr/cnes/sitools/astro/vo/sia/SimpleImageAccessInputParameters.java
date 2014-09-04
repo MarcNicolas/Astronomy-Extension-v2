@@ -21,6 +21,7 @@ package fr.cnes.sitools.astro.vo.sia;
 import fr.cnes.sitools.dataset.DataSetApplication;
 import fr.cnes.sitools.extensions.common.InputsValidation;
 import fr.cnes.sitools.extensions.common.NotNullAndNotEmptyValidation;
+import fr.cnes.sitools.extensions.common.NumberValidation;
 import fr.cnes.sitools.extensions.common.SpatialGeoValidation; 
 import fr.cnes.sitools.extensions.common.StatusValidation;
 import fr.cnes.sitools.extensions.common.Validation;
@@ -108,11 +109,19 @@ public class SimpleImageAccessInputParameters implements DataModelInterface {
     final String intersect = this.request.getResourceRef().getQueryAsForm().getFirstValue(SimpleImageAccessProtocolLibrary.INTERSECT);
     final String verbosity = this.request.getResourceRef().getQueryAsForm().getFirstValue(SimpleImageAccessProtocolLibrary.VERB);
     //TODO check the differentParameters
-    if (Util.isSet(format) && format.equals(SimpleImageAccessProtocolLibrary.ParamStandardFormat.METADATA.name())) {
-      fillMetadataFormat();
-    } else {
-        
-      checkInputParameters(posInput, sizeInput);
+    if(posInput == null && sizeInput == null){
+        final Info info = new Info();
+        info.setName("QUERY_STATUS");
+        info.setValueAttribute("ERROR");
+        final List<Info> listInfos = new ArrayList<Info>();
+        listInfos.add(info);
+        this.dataModel.put("infos", listInfos);
+    }else{
+        if (Util.isSet(format) && format.equals(SimpleImageAccessProtocolLibrary.ParamStandardFormat.METADATA.name())) {
+            fillMetadataFormat();
+        } else {
+            checkInputParameters(posInput, sizeInput);
+        }
     }
   }
 
@@ -202,7 +211,12 @@ public class SimpleImageAccessInputParameters implements DataModelInterface {
     Validation validation = new InputsValidation(validationMap);
     validation = new NotNullAndNotEmptyValidation(validation, SimpleImageAccessProtocolLibrary.POS);
     validation = new NotNullAndNotEmptyValidation(validation, SimpleImageAccessProtocolLibrary.SIZE);
-    validation = new SpatialGeoValidation(validation, SimpleImageAccessProtocolLibrary.POS, 0, 1, new double[]{0.0, 360.0}, new double[]{-90.0, 90.0});
+    if(validation.validate().isValid()){
+        validation = new SpatialGeoValidation(validation, SimpleImageAccessProtocolLibrary.POS, 0, 1, new double[]{0.0, 360.0}, new double[]{-90.0, 90.0});
+        // LA LIGNE SUIVANTE A ETE AJOUTEE POUR VERIFIER QUE LA SIZE EST BIEN UN NOMBRE
+        validation = new NumberValidation(validation, SimpleImageAccessProtocolLibrary.SIZE, true);
+        //-----------------------------------------------------------------------------------------------
+    }  
     StatusValidation status = validation.validate();
     if (status.isValid()) {
         final String pos = validation.getMap().get(SimpleImageAccessProtocolLibrary.POS);
@@ -221,16 +235,21 @@ public class SimpleImageAccessInputParameters implements DataModelInterface {
         }
         
     } else {
+        Info info = new Info();
+        info.setName("QUERY_STATUS");
+        info.setValueAttribute("ERROR");
+        infos.add(info);
         final Map<String, String> errors = status.getMessages();
         final Set<Map.Entry<String, String>> entries = errors.entrySet();        
         for (Map.Entry<String, String> entry : entries) {
-            final Info info = new Info();
+            info = new Info();
             info.setID(entry.getKey());
             info.setName("Error in " + entry.getKey());
             info.setValueAttribute("Error in input " + entry.getKey() + ": " + entry.getValue());
             infos.add(info);
             LOG.log(Level.FINEST, "{0}: {1}", new Object[]{entry.getKey(), entry.getValue()});            
-        }        
+        }
+        
     }
     
     if (!infos.isEmpty()) {
