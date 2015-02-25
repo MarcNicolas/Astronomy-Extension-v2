@@ -19,14 +19,17 @@
 package fr.cnes.sitools.astro.vo.sia;
 
 import fr.cnes.sitools.dataset.DataSetApplication;
+import fr.cnes.sitools.dataset.dto.ColumnConceptMappingDTO;
+import fr.cnes.sitools.dictionary.model.Concept;
 import fr.cnes.sitools.extensions.common.InputsValidation;
 import fr.cnes.sitools.extensions.common.NotNullAndNotEmptyValidation;
-import fr.cnes.sitools.extensions.common.NumberValidation;
+import fr.cnes.sitools.extensions.common.NumberArrayValidation;
 import fr.cnes.sitools.extensions.common.SpatialGeoValidation; 
 import fr.cnes.sitools.extensions.common.StatusValidation;
 import fr.cnes.sitools.extensions.common.Validation;
 import fr.cnes.sitools.plugins.resources.model.ResourceModel;
 import fr.cnes.sitools.util.Util;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,6 +40,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.ivoa.xml.votable.v1.AnyTEXT;
 import net.ivoa.xml.votable.v1.DataType;
+import net.ivoa.xml.votable.v1.Field;
 import net.ivoa.xml.votable.v1.Info;
 import net.ivoa.xml.votable.v1.Option;
 import net.ivoa.xml.votable.v1.Param;
@@ -44,11 +48,14 @@ import net.ivoa.xml.votable.v1.Values;
 import org.restlet.Context;
 import org.restlet.Request;
 
+
 /**
  * Input parameters for SIA.
  *
  * @author Jean-Crhistophe Malapert <jean-christophe.malapert@cnes.fr>
  */
+import fr.cnes.sitools.common.exception.SitoolsException;
+import fr.cnes.sitools.dataset.dto.DictionaryMappingDTO;
 public class SimpleImageAccessInputParameters implements DataModelInterface {
   /**
    * Logger.
@@ -110,7 +117,7 @@ public class SimpleImageAccessInputParameters implements DataModelInterface {
     final String verbosity = this.request.getResourceRef().getQueryAsForm().getFirstValue(SimpleImageAccessProtocolLibrary.VERB);
     //TODO check the differentParameters
     if(posInput == null && sizeInput == null){
-        final Info info = new Info();
+        Info info = new Info();
         info.setName("QUERY_STATUS");
         info.setValueAttribute("ERROR");
         final List<Info> listInfos = new ArrayList<Info>();
@@ -196,6 +203,19 @@ public class SimpleImageAccessInputParameters implements DataModelInterface {
     listParam.add(param);
 
     dataModel.put("params", listParam);
+    //******************************************************************************************************************
+    //******************************************************************************************************************
+    //******************************************************************************************************************
+    String dictionaryName = resourceModel.getParameterByName(SimpleImageAccessProtocolLibrary.DICTIONARY).getValue();
+    final List<String> columnList = new ArrayList<String>();
+    List<Field> fieldList = new ArrayList<Field>();
+    try {
+        List<ColumnConceptMappingDTO> mappingList = getDicoFromConfiguration(datasetApp, dictionaryName);
+        setFields(fieldList, columnList, mappingList);
+    }catch (SitoolsException ex) {
+             
+    }
+    
   }
 
   /**
@@ -213,8 +233,8 @@ public class SimpleImageAccessInputParameters implements DataModelInterface {
     validation = new NotNullAndNotEmptyValidation(validation, SimpleImageAccessProtocolLibrary.SIZE);
     if(validation.validate().isValid()){
         validation = new SpatialGeoValidation(validation, SimpleImageAccessProtocolLibrary.POS, 0, 1, new double[]{0.0, 360.0}, new double[]{-90.0, 90.0});
-        // LA LIGNE SUIVANTE A ETE AJOUTEE POUR VERIFIER QUE LA SIZE EST BIEN UN NOMBRE
-        validation = new NumberValidation(validation, SimpleImageAccessProtocolLibrary.SIZE, true);
+        // LA LIGNE SUIVANTE A ETE AJOUTEE POUR VERIFIER QUE LA SIZE EST BIEN UN ARRAY DE NOMBRE
+        validation = new NumberArrayValidation(validation, SimpleImageAccessProtocolLibrary.SIZE, ",", 1, 2);
         //-----------------------------------------------------------------------------------------------
     }  
     StatusValidation status = validation.validate();
@@ -324,5 +344,128 @@ public class SimpleImageAccessInputParameters implements DataModelInterface {
    */
   public final int getVerb() {
     return this.verb;
-  }  
+  }
+  
+  //----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
+  /**
+   * Set Fields and columnSqlAliasList.
+   *
+   * @param fieldList List of fields to display on the VOTable
+   * @param columnList List of SQL column
+   * @param mappingList List of SQL column/concept
+   */
+  private void setFields(final List<Field> fieldList, final List<String> columnList, final List<ColumnConceptMappingDTO> mappingList) {
+
+    for (ColumnConceptMappingDTO mappingIter : mappingList) {
+
+      String id = null;
+      String name = null;
+      String ucd = null;
+      String utype = null;
+      String ref = null;
+      String datatype = null;
+      String width = null;
+      String precision = null;
+      String unit = null;
+      String type = null;
+      String xtype = null;
+      String arraysize = null;
+      String descriptionValue = null;
+      columnList.add(mappingIter.getColumnAlias());
+      final Concept concept = mappingIter.getConcept();
+      if (concept.getName() != null) {
+        name = concept.getName();
+      }
+      if (concept.getPropertyFromName("ID").getValue() != null) {
+        id = concept.getPropertyFromName("ID").getValue();
+      }
+      if (concept.getPropertyFromName("ucd").getValue() != null) {
+        ucd = concept.getPropertyFromName("ucd").getValue();
+      }
+      if (concept.getPropertyFromName("utype").getValue() != null) {
+        utype = concept.getPropertyFromName("utype").getValue();
+      }
+      if (concept.getPropertyFromName("ref").getValue() != null) {
+        ref = concept.getPropertyFromName("ref").getValue();
+      }
+      if (concept.getPropertyFromName("datatype").getValue() != null) {
+        datatype = concept.getPropertyFromName("datatype").getValue();
+      }
+      if (concept.getPropertyFromName("width").getValue() != null) {
+        width = concept.getPropertyFromName("width").getValue();
+      }
+      if (concept.getPropertyFromName("precision").getValue() != null) {
+        precision = concept.getPropertyFromName("precision").getValue();
+      }
+      if (concept.getPropertyFromName("unit").getValue() != null) {
+        unit = concept.getPropertyFromName("unit").getValue();
+      }
+      if (concept.getPropertyFromName("type").getValue() != null) {
+        type = concept.getPropertyFromName("type").getValue();
+      }
+      if (concept.getPropertyFromName("xtype").getValue() != null) {
+        xtype = concept.getPropertyFromName("xtype").getValue();
+      }
+      if (concept.getPropertyFromName("arraysize").getValue() != null) {
+        arraysize = concept.getPropertyFromName("arraysize").getValue();
+      }
+      if (concept.getDescription() != null) {
+        descriptionValue = concept.getDescription();
+      }
+      final Field field = new Field();
+      field.setID(id);
+      field.setName(name);
+      field.setUcd(ucd);
+      field.setUtype(utype);
+      field.setRef(ref);
+      field.setDatatype(DataType.fromValue(datatype));
+      if (width != null) {
+        field.setWidth(BigInteger.valueOf(Long.valueOf(width)));
+      }
+      field.setPrecision(precision);
+      field.setUnit(unit);
+      field.setType(type);
+      field.setXtype(xtype);
+      field.setArraysize(arraysize);
+      final AnyTEXT anyText = new AnyTEXT();
+      anyText.getContent().add(descriptionValue);
+      field.setDESCRIPTION(anyText);
+      fieldList.add(field);
+    }
+    dataModel.put("fields", fieldList);
+  }
+  
+  /**
+   * Provide the mapping between SQL column/concept for a given dictionary.
+   *
+   * @param datasetApp Application where this service is attached
+   * @param dicoToFind Dictionary name to find
+   * @return Returns a mapping SQL column/Concept
+   * @throws SitoolsException No mapping has been done or cannot find the dico
+   */
+  protected List<ColumnConceptMappingDTO> getDicoFromConfiguration(final DataSetApplication datasetApp,
+          final String dicoToFind) throws SitoolsException {
+    List<ColumnConceptMappingDTO> colConceptMappingDTOList = null;
+
+    // Get the list of dictionnaries related to the datasetApplication
+    final List<DictionaryMappingDTO> dicoMappingList = datasetApp.getDictionaryMappings();
+    if (!Util.isSet(dicoMappingList) || dicoMappingList.isEmpty()) {
+      throw new SitoolsException("No mapping with VO concepts has been done. please contact the administrator");
+    }
+
+    // For each dictionary, find the interesting one and return the mapping SQLcolumn/concept
+    for (DictionaryMappingDTO dicoMappingIter : dicoMappingList) {
+      final String dicoName = dicoMappingIter.getDictionaryName();
+      if (dicoToFind.equals(dicoName)) {
+        colConceptMappingDTOList = dicoMappingIter.getMapping();
+        break;
+      }
+    }
+    return colConceptMappingDTOList;
+  }
+  
+  
+  
 }

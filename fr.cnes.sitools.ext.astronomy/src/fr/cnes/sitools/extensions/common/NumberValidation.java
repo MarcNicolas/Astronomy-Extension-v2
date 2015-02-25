@@ -59,6 +59,7 @@ public class NumberValidation extends NotNullAndNotEmptyValidation {
      * @param isRequired Indicates if the keyword is or is not required
      */
     public NumberValidation(final Validation validation, final String keyword, final boolean isRequired) {
+        
         this(validation, keyword);
         setRequiredKeyword(isRequired);
     }

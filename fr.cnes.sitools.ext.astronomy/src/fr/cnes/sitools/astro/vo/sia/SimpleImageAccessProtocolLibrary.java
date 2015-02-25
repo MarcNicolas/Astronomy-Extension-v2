@@ -640,7 +640,7 @@ public class SimpleImageAccessProtocolLibrary {
       return this.dataType;
     }
   };
-  //public enum ImageFormat{}
+  //public enum ImageFormat{}//public enum ImageFormat{}//public enum ImageFormat{}//public enum ImageFormat{}//public enum ImageFormat{}//public enum ImageFormat{}//public enum ImageFormat{}//public enum ImageFormat{}
 
   /**
    * Constructor.
@@ -686,6 +686,6 @@ public class SimpleImageAccessProtocolLibrary {
    */
   public final VOTableRepresentation getResponse() {
     final Map dataModel = fillDataModel();
-    return new VOTableRepresentation(dataModel);
+    return new VOTableRepresentation(dataModel,"votable.ftl");
   }  
 }
