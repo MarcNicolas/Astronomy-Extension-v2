@@ -104,7 +104,17 @@ public class ConeSearchInputParameters implements ConeSearchDataModelInterface {
     final String decInput = this.request.getResourceRef().getQueryAsForm().getFirstValue(ConeSearchProtocolLibrary.DEC);
     final String srInput = this.request.getResourceRef().getQueryAsForm().getFirstValue(ConeSearchProtocolLibrary.SR);
     final String verbInput = this.request.getResourceRef().getQueryAsForm().getFirstValue(ConeSearchProtocolLibrary.VERB);
-    checkInputParameters(raInput, decInput, srInput, maxSr, verbInput, verbosity, verbVal);
+    if(raInput == null && decInput == null && srInput == null){
+        Info info = new Info();
+        info.setName("QUERY_STATUS");
+        info.setValueAttribute("ERROR");
+        info.setValue("RA, DEC and SR must be not null");
+        final List<Info> listInfos = new ArrayList<Info>();
+        listInfos.add(info);
+        this.dataModel.put("infos", listInfos);
+    }else{
+        checkInputParameters(raInput, decInput, srInput, maxSr, verbInput, verbosity, verbVal);
+    }
   }
 
   /**
@@ -141,6 +151,10 @@ public class ConeSearchInputParameters implements ConeSearchDataModelInterface {
         this.radius = Double.valueOf(input.get(ConeSearchProtocolLibrary.SR));
         this.verb = Integer.valueOf(input.get(ConeSearchProtocolLibrary.VERB));
     } else {
+        Info infoError = new Info();
+        infoError.setName("QUERY_STATUS");
+        infoError.setValueAttribute("ERROR");
+        infos.add(infoError);
         final Map<String, String> errors = status.getMessages();
         final Set<Entry<String, String>> entries = errors.entrySet();
         for (Entry<String, String> entry : entries) {
