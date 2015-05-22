@@ -123,6 +123,9 @@ public class SimpleImageAccessInputParameters implements DataModelInterface {
         final List<Info> listInfos = new ArrayList<Info>();
         listInfos.add(info);
         this.dataModel.put("infos", listInfos);
+        if(format.equalsIgnoreCase("METADATA")){
+            fillMetadataFormat();
+        }
     }else{
         if (Util.isSet(format) && format.equals(SimpleImageAccessProtocolLibrary.ParamStandardFormat.METADATA.name())) {
             fillMetadataFormat();
